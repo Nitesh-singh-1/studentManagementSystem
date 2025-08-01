@@ -1,0 +1,56 @@
+﻿@model StudentManagementSystem.Models.LoginViewModel
+@{
+    ViewData["Title"] = "Login";
+}
+<div>
+
+<h2>Login</h2>
+
+<form asp-action="Index" method="post">
+        <div class="container align-items-center" style="width:30%">
+    <div class="form-group">
+        <label>Username</label>
+        <input asp-for="Username" class="form-control" />
+    </div>
+    <div class="form-group" >
+        <label>Password</label>
+        <input asp-for="Password" type="password" class="form-control" />
+    </div>
+    <div class="form-group">
+        @* <label>CAPTCHA: @ViewBag.Captcha</label>
+        <div class="d-flex">
+            <input asp-for="CaptchaCode" class="form-control" />
+            <button type="button" class="btn btn-secondary ms-2" onclick="refreshCaptcha()">Refresh</button>
+        </div>
+        <input type="hidden" name="GeneratedCaptcha" value="@ViewBag.Captcha" /> *@
+        <label>CAPTCHA:</label>
+        <div class="d-flex align-items-center">
+            <img id="captchaImage" src="/Login/CaptchaImage" />
+            <button type="button" class="btn btn-secondary ms-2" onclick="refreshCaptcha()">⟳</button>
+        </div>
+        <input asp-for="CaptchaCode" class="form-control mt-2" />
+    </div>
+    <button type="submit" class="btn btn-primary mt-3" style="width:100%">Login</button>
+        </div>
+</form>
+
+@section Scripts {
+   @*  <script>
+        function refreshCaptcha() {
+            fetch('/Login/RefreshCaptcha')
+                .then(response => response.json())
+                .then(data => {
+                    location.reload(); // simple refresh for now
+                });
+        }
+    </script> *@
+    <script>
+        function refreshCaptcha() {
+            fetch('/Login/RefreshCaptcha')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('captchaImage').src = '/Login/CaptchaImage?' + new Date().getTime(); // force refresh
+                });
+        }
+    </script>
+}

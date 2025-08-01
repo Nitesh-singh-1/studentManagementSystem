@@ -1,0 +1,64 @@
+﻿@model List<StudentManagementSystem.Models.Student>
+@{
+    ViewData["Title"] = "Student Report";
+    var selectedClass = ViewBag.SelectedClass as string;
+}
+
+<h2>Student Report</h2>
+
+<form method="get" asp-action="Index" class="form-inline mb-3">
+    <label for="classSelect">Select Class:</label>
+    <select id="classSelect" name="selectedClass" class="form-control mb-2 w-25">
+        <option value="">-- Select Class --</option>
+        @foreach (var cls in ViewBag.Classes as List<string>)
+        {
+            var isSelected = (cls == (ViewBag.SelectedClass as string)) ? "selected" : "";
+            @Html.Raw($"<option value=\"{cls}\" {isSelected}>{cls}</option>")
+        }
+    </select>
+
+    <button type="submit" class="btn btn-primary">View Report</button>
+</form>
+
+
+@if (Model.Any())
+{
+    <h4>Class: @selectedClass | Date: @DateTime.Now.ToShortDateString()</h4>
+
+    <table class="table table-bordered mt-3">
+        <thead class="table-light">
+            <tr>
+                <th>Roll No.</th>
+                <th>Student Name</th>
+                <th>Age</th>
+                <th>Gender</th>
+                <th>Address</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var student in Model)
+            {
+                <tr>
+                    <td>@student.RollNumber</td>
+                    <td>@student.StudentName</td>
+                    <td>@student.Age</td>
+                    <td>@student.Gender</td>
+                    <td>@student.Address</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <a class="btn btn-outline-primary mt-2"
+       asp-action="Print"
+       asp-controller="Report"
+       asp-route-selectedClass="@ViewBag.SelectedClass"
+       target="_blank">
+        🖨 Print Preview / Export
+    </a>
+
+}
+else if (selectedClass != null)
+{
+    <div class="alert alert-warning">No records found for Class @selectedClass.</div>
+}
