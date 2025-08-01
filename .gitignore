@@ -7,8 +7,7 @@
 bin/
 obj/
 
-# Ignore local database
-*.accdb
+
 
 # Ignore OS files
 Thumbs.db
