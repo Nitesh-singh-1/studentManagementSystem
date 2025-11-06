@@ -1,0 +1,75 @@
+﻿@using EmployeeManagementSystem.Models
+@model EmployeeResponse
+@{
+    ViewBag.Title = "Employee Details";
+}
+@{
+    var apiBaseUrl = Configuration["ApiSettings:BaseUrl"];
+}
+
+<div class="container py-4">
+    <h2 class="text-center fw-bold mb-1" style="color: var(--text-color);">
+        Employee Details
+    </h2>
+    <div class="text-start mb-4">
+        <a asp-action="Index" asp-controller="Report"
+           class="text-decoration-none"
+           style="color: var(--primary-color); font-weight: 500;">
+            ← Back to List
+        </a>
+    </div>
+
+    <div class="p-4 shadow-sm border-0 bg-white bg-opacity-75">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <p><strong>Name:</strong> @Model.employeeName</p>
+                <p><strong>Department:</strong> @Model.department</p>
+                <p><strong>Designation:</strong> @Model.designation</p>
+                <p><strong>Age:</strong> @Model.age</p>
+                <p><strong>Gender:</strong> @Model.gender</p>
+                <p><strong>Address:</strong> @Model.address</p>
+            </div>
+
+            <div class="col-md-6">
+                <h5 class="fw-semibold mb-2" style="color: var(--text-color);">Documents / Images</h5>
+                <hr class="mt-0 mb-3" style="border-color: rgba(0,0,0,0.1);" />
+
+                @if (Model.employeeDocuments != null && Model.employeeDocuments.Any())
+                {
+                    foreach (var doc in Model.employeeDocuments)
+                    {
+                        <div class="mb-3 text-center">
+                            <p class="fw-medium">@doc.FileName</p>
+
+                            @if (doc.ImageData != null && doc.ImageData.Length > 0)
+                            {
+                                string base64 = Convert.ToBase64String(doc.ImageData);
+                                <img src="data:image/jpeg;base64,@base64"
+                                     alt="@doc.FileName"
+                                     class="img-fluid border"
+                                     style="max-width: 250px; border-radius: 6px; border-color: var(--primary-color);" />
+                            }
+                            else
+                            {
+                                <td class="text-center">
+                                    @* <a href="https://localhost:7256/api/Employee/ViewEmployeeDocument/@Model.Id?docId=@doc.Id"
+                                       target="_blank"
+                                       class="btn btn-sm btn-outline-warning">
+                                        <i class="bi bi-eye"></i> View
+                                    </a> *@
+                                    <a href="@($"{apiBaseUrl}/Employee/ViewEmployeeDocument/{Model.Id}?docId={doc.Id}")" target="_blank"
+                                       class="btn btn-sm btn-outline-warning"><i class="bi bi-eye"></i>View</a>
+
+                                </td>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted fst-italic">No documents available</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

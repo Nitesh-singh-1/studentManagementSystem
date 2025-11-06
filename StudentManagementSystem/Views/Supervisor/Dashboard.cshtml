@@ -1,0 +1,229 @@
+﻿@using EmployeeManagementSystem.Models
+@model List<EmployeeResponse>
+
+@{
+    ViewBag.Title = "Supervisor Dashboard";
+}
+@{
+    var apiBaseUrl = Configuration["ApiSettings:BaseUrl"];
+}
+
+<div class="container my-5">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-primary mb-1">Supervisor Dashboard</h2>
+            <p class="text-muted mb-0">Welcome, <strong>@ViewBag.Username</strong></p>
+        </div>
+        @* <a href="/Login/Logout" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-box-arrow-right"></i> Logout
+        </a> *@
+    </div>
+
+    <!-- Search Bar -->
+    @* <form asp-action="Dashboard" method="get" class="input-group mb-4" role="search"> *@
+       @*  <input type="text"
+               name="searchTerm"
+               class="form-control shadow-sm"
+               placeholder="🔍 Search by name, department, or designation..."
+               value="@ViewBag.SearchTerm" />
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-search"></i> Search
+        </button> *@
+        @* @if (!string.IsNullOrWhiteSpace(ViewBag.SearchTerm))
+        {
+            <a asp-action="Dashboard" class="btn btn-outline-secondary">
+                Clear
+            </a>
+        } *@
+    @* </form> *@
+    <div class="input-group mb-3">
+        <input id="searchInput" type="text" class="form-control" placeholder="Search by keyword...">
+        <button class="btn btn-primary" type="button" onclick="searchResumes()">Search</button>
+        <button class="btn btn-secondary" type="button" onclick="window.location.reload()">Clear</button>
+    </div>
+    <!-- Data Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            @await Html.PartialAsync("_EmployeeTable", Model)
+            <div class="modal fade" id="remarkModal" tabindex="-1" aria-labelledby="remarkModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title fw-bold" id="remarkModalLabel">Add Remark</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="empId" />
+                            <input type="hidden" id="approvalStatus" />
+                            <div class="mb-3">
+                                <label for="remarkText" class="form-label">Remark</label>
+                                <textarea class="form-control" id="remarkText" rows="3" placeholder="Enter your remark here..." required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="submitRemark()">Submit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+         
+    <script>
+        //const apiBaseUrl = '@apiBaseUrl';
+
+                document.addEventListener('click', function (e) {
+            if (e.target.closest('.btn-outline-warning') || e.target.closest('.btn-warning')) {
+                const viewBtn = e.target.closest('a');
+                const row = viewBtn.closest('tr');
+                const downloadBtn = row.querySelector('.download-btn');
+
+                if (downloadBtn) {
+                    // Enable the download button
+                    downloadBtn.classList.remove('disabled');
+                    downloadBtn.style.pointerEvents = 'auto';
+                    downloadBtn.style.opacity = '1';
+                }
+            }
+        });
+
+
+                async function searchResumes() {
+            const keyword = document.getElementById("searchInput").value.trim();
+            if (!keyword) {
+                alert("Please enter a keyword");
+                return;
+            }
+
+            const tableBody = document.querySelector("#employeeTable tbody");
+            tableBody.innerHTML = "<tr><td colspan='10' class='text-center'>Searching...</td></tr>";
+
+            try {
+                const response = await fetch(`${apiBaseUrl}/Employee/SearchResumes?keyword=${encodeURIComponent(keyword)}`);
+                if (!response.ok) {
+                    tableBody.innerHTML = "<tr><td colspan='10' class='text-center text-danger'>No resumes found</td></tr>";
+                    return;
+                }
+
+                const resumes = await response.json();
+                const pdfNames = resumes.map(r => r.resumeName);
+
+                // Now get all employees
+                const empResponse = await fetch(`${apiBaseUrl}/Employee/getAll`);
+                const employees = await empResponse.json();
+
+                // Filter employees who have any document name in pdfNames
+                const filtered = employees.filter(e =>
+                    e.employeeDocuments?.some(d => pdfNames.includes(d.documentName))
+                );
+                        allEmployees = filtered;
+                        currentPage = 1;
+                        renderPage(currentPage);
+                if (filtered.length === 0) {
+                    tableBody.innerHTML = "<tr><td colspan='10' class='text-center text-warning'>No matching employees found.</td></tr>";
+                    return;
+                }
+
+                tableBody.innerHTML = "";
+
+                filtered.forEach(emp => {
+                    const statusBadge = emp.isApproved === true
+                        ? `<span class="badge bg-success">Approved</span>`
+                        : emp.isApproved === false
+                            ? `<span class="badge bg-danger">Rejected</span>`
+                            : `<span class="badge bg-secondary">Pending</span>`;
+
+                    const row = `
+                        <tr>
+                            <td>${emp.employeeName}</td>
+                            <td>${emp.department}</td>
+                            <td>${emp.designation}</td>
+                            <td>${emp.age}</td>
+                            <td>${emp.gender}</td>
+                            <td>${emp.address}</td>
+                            <td class="text-center">
+                                <a href="${apiBaseUrl}/Employee/ViewEmployeeDocument/${emp.id}"
+                                   target="_blank"
+                                   class="btn btn-sm btn-outline-warning">
+                                   <i class="bi bi-eye"></i> View
+                                </a>
+                            </td>
+                            @if (Context.Session.GetString("UserRole") == "Supervisor"){
+                            <text>
+                            <td style="justify-content:space-evenly;display:flex;">
+                                <button class="btn btn-success btn-sm" onclick="openRemarkModal(${emp.id}, true)">
+                                    Approve
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="openRemarkModal(${emp.id}, false)">
+                                    Reject
+                                </button>
+                            </td>
+                        </text>
+                        }
+                            <td>${statusBadge}</td>
+                            <td>${emp.remarks || ''}</td>
+                        </tr>
+                    `;
+
+                    tableBody.insertAdjacentHTML('beforeend', row);
+                });
+            } catch (err) {
+                console.error(err);
+                tableBody.innerHTML = "<tr><td colspan='10' class='text-center text-danger'>Error occurred while searching.</td></tr>";
+            }
+        }
+
+
+                    let selectedEmpId = null;
+        let selectedApproval = null;
+
+        function openRemarkModal(id, isApproved) {
+            selectedEmpId = id;
+            selectedApproval = isApproved;
+
+            const modalLabel = document.getElementById("remarkModalLabel");
+            modalLabel.textContent = isApproved ? "Approve Employee" : "Reject Employee";
+
+            // Clear textarea
+            document.getElementById("remarkText").value = "";
+
+            // Show modal
+            const remarkModal = new bootstrap.Modal(document.getElementById("remarkModal"));
+            remarkModal.show();
+        }
+
+        function submitRemark() {
+            const remark = document.getElementById("remarkText").value.trim();
+            if (!remark) {
+                alert("Remark is required before proceeding.");
+                return;
+            }
+
+            $.ajax({
+                url: `${apiBaseUrl}/Supervisor/Approve`,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    id: selectedEmpId,
+                    isApproved: selectedApproval,
+                    remark: remark
+                }),
+                success: function (response) {
+                    alert(response.message);
+                    location.reload();
+                },
+                error: function (xhr) {
+                    alert("Error: " + xhr.responseText);
+                }
+            });
+        }
+    </script>
+}
+

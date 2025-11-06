@@ -1,56 +1,128 @@
-﻿@model StudentManagementSystem.Models.LoginViewModel
+﻿@model EmployeeManagementSystem.Models.LoginViewModel
 @{
+    Layout = null; // 🔥 Disables _Layout.cshtml so menu bar won’t appear
     ViewData["Title"] = "Login";
 }
-<div>
 
-<h2>Login</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - Employee Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+       
 
-<form asp-action="Index" method="post">
-        <div class="container align-items-center" style="width:30%">
-    <div class="form-group">
-        <label>Username</label>
-        <input asp-for="Username" class="form-control" />
-    </div>
-    <div class="form-group" >
-        <label>Password</label>
-        <input asp-for="Password" type="password" class="form-control" />
-    </div>
-    <div class="form-group">
-        @* <label>CAPTCHA: @ViewBag.Captcha</label>
-        <div class="d-flex">
-            <input asp-for="CaptchaCode" class="form-control" />
-            <button type="button" class="btn btn-secondary ms-2" onclick="refreshCaptcha()">Refresh</button>
-        </div>
-        <input type="hidden" name="GeneratedCaptcha" value="@ViewBag.Captcha" /> *@
-        <label>CAPTCHA:</label>
-        <div class="d-flex align-items-center">
-            <img id="captchaImage" src="/Login/CaptchaImage" />
-            <button type="button" class="btn btn-secondary ms-2" onclick="refreshCaptcha()">⟳</button>
-        </div>
-        <input asp-for="CaptchaCode" class="form-control mt-2" />
-    </div>
-    <button type="submit" class="btn btn-primary mt-3" style="width:100%">Login</button>
-        </div>
-</form>
-
-@section Scripts {
-   @*  <script>
-        function refreshCaptcha() {
-            fetch('/Login/RefreshCaptcha')
-                .then(response => response.json())
-                .then(data => {
-                    location.reload(); // simple refresh for now
-                });
+        .login-card {
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 400px;
+            animation: fadeIn 0.6s ease-in-out;
         }
-    </script> *@
+
+        @@keyframes fadeIn {
+            from
+
+        {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        }
+
+        .login-card h2 {
+            text-align: center;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            margin-top:1.8rem;
+            color: #333;
+        }
+
+        .form-control {
+            border-radius: 10px;
+        }
+
+        .btn-primary {
+            border-radius: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .captcha-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+            .captcha-container img {
+                border-radius: 8px;
+                border: 1px solid #ddd;
+            }
+
+        .footer-text {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #888;
+            margin-top: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper d-flex align-items-center  justify-content-center">
+        <div class="login-card mt-15">
+        <h2>Login</h2>
+        <form asp-action="Index" method="post">
+            <div class="form-group mb-3">
+                <label for="Username" class="form-label">Username</label>
+                <input asp-for="Username" class="form-control" placeholder="Enter your username" />
+                <span asp-validation-for="Username" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="Password" class="form-label">Password</label>
+                <input asp-for="Password" type="password" class="form-control" placeholder="Enter your password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="form-label">CAPTCHA</label>
+                <div class="captcha-container mb-2">
+                    <img id="captchaImage" src="/Login/CaptchaImage" alt="Captcha" height="40" />
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="refreshCaptcha()">⟳</button>
+                </div>
+                <input asp-for="CaptchaCode" class="form-control" placeholder="Enter CAPTCHA code" />
+                <span asp-validation-for="CaptchaCode" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 mt-3">Login</button>
+        </form>
+
+        <div class="footer-text">
+            © @DateTime.Now.Year Employee Management System
+        </div>
+    </div>
+    </div>
     <script>
-        function refreshCaptcha() {
+           function refreshCaptcha() {
             fetch('/Login/RefreshCaptcha')
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('captchaImage').src = '/Login/CaptchaImage?' + new Date().getTime(); // force refresh
+                    // Now reload the image to show the new one
+                    document.getElementById('captchaImage').src = '/Login/CaptchaImage?' + new Date().getTime();
+                    document.querySelector('[name="CaptchaCode"]').value = '';
                 });
         }
     </script>
-}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

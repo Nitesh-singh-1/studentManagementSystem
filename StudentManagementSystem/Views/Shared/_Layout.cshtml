@@ -1,54 +1,207 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var apiBaseUrl = Configuration["ApiSettings:BaseUrl"];
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - StudentManagementSystem</title>
+    <title>@ViewBag.Title - Employee Management</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/StudentManagementSystem.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="~/css/theme.css" />
+
+    <style>
+        /* 🎨 Global Theme */
+        body {
+            background: linear-gradient(135deg, #ffffff, #cedde84d);
+            font-family: 'Segoe UI', sans-serif;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        /* 🔝 Top Navigation Bar */
+        .topbar {
+            background-color: #ffffff;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            z-index: 1030;
+        }
+
+        .navbar-brand {
+            color: #6c5ce7 !important;
+            font-weight: 700;
+            font-size: 1.25rem;
+        }
+
+        .navbar .btn-outline-primary {
+            border-color: #6c5ce7;
+            color: #6c5ce7;
+        }
+
+            .navbar .btn-outline-primary:hover {
+                background-color: #6c5ce7;
+                color: white;
+            }
+
+        .nav-link {
+            color: #333 !important;
+            font-weight: 500;
+            transition: 0.2s ease;
+        }
+
+            .nav-link:hover {
+                color: #6c5ce7 !important;
+            }
+
+            .nav-link.active {
+                color: #6c5ce7 !important;
+                font-weight: 600;
+                background-color: #c8d9f2 !important;
+            }
+
+        /* 📜 Offcanvas Sidebar */
+        .offcanvas-width {
+            width: 260px;
+        }
+
+        .offcanvas {
+            background-color: #f8f6fb;
+            border-right: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .offcanvas-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .offcanvas-title {
+            color: #6c5ce7;
+            font-weight: 700;
+        }
+
+        .offcanvas-body .nav-link {
+            color: #333 !important;
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+        }
+
+            .offcanvas-body .nav-link:hover {
+                background-color: rgba(108, 92, 231, 0.1);
+            }
+
+            .offcanvas-body .nav-link.active {
+                background-color: rgba(108, 92, 231, 0.15);
+                color: #6c5ce7 !important;
+                font-weight: 600;
+            }
+
+        .offcanvas-body small {
+            color: #555;
+        }
+
+        /* 🧾 Main Content */
+        .content-wrapper {
+            padding: 2rem;
+        }
+
+        /* ⚙️ Logout Link */
+        .nav-link.text-danger {
+            color: #e74c3c !important;
+        }
+
+            .nav-link.text-danger:hover {
+                color: #c0392b !important;
+            }
+
+        /* 🧭 Scrollbar & Transitions */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: rgba(108, 92, 231, 0.3);
+            border-radius: 5px;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">StudentManagementSystem</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Student" asp-action="Index">Home</a>
-                        </li>
-                       
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Report" asp-action="Index">Student Report</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Login" asp-action="Logout">Logout</a>
-                        </li>
+    @await Html.PartialAsync("_Header")
+    <!-- 🔝 Top Bar -->
+    @* <nav class="navbar navbar-light topbar px-3">
+        <div class="container-fluid">
+            <button class="btn btn-outline-primary me-2" type="button"
+                    data-bs-toggle="offcanvas" data-bs-target="#appSidebar" aria-controls="appSidebar"
+                    aria-label="Toggle navigation">
+                <i class="fa-solid fa-bars"></i>
+            </button>
 
-                    </ul>
-                </div>
+            <a class="navbar-brand" href="/">EMS</a>
+
+            <ul class="navbar-nav flex-row ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link text-danger" asp-controller="Login" asp-action="Logout">
+                        <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav> *@
+
+    <!-- 📂 Offcanvas Sidebar -->
+    <div class="offcanvas offcanvas-start offcanvas-width" tabindex="-1" id="appSidebar" aria-labelledby="appSidebarLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="appSidebarLabel">Menu</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+
+        <div class="offcanvas-body d-flex flex-column">
+            <ul class="nav nav-pills flex-column gap-1">
+
+                <!-- 👷 Operator Menu -->
+                @if (Context.Session.GetString("UserRole") == "Operator")
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewBag.Title == "Employee Registration" ? "active" : "")"
+                           asp-controller="Employee" asp-action="Index">
+                            <i class="fa-solid fa-users-gear me-2"></i> Manage Employees
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewBag.Title == "Employee Report" ? "active" : "")"
+                           asp-controller="Report" asp-action="Index">
+                            <i class="fa-solid fa-file-lines me-2"></i> Employee Report
+                        </a>
+                    </li>
+                }
+
+                <!-- 👨‍💼 Supervisor Menu -->
+                @if (Context.Session.GetString("UserRole") == "Supervisor")
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @(ViewBag.Title == "Supervisor Dashboard" ? "active" : "")"
+                           asp-controller="Supervisor" asp-action="Dashboard">
+                            <i class="fa-solid fa-gauge-high me-2"></i> Supervisor Dashboard
+                        </a>
+                    </li>
+                }
+            </ul>
+
+            <div class="mt-auto pt-3 border-top">
+                <small>Logged in as: <strong>@Context.Session.GetString("UserRole")</strong></small>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+        </div>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - StudentManagementSystem - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <!-- 🧾 Main Content -->
+    <div class="container-fluid content-wrapper">
+        @RenderBody()
+        @await Html.PartialAsync("_Footer")
+    </div>
+    @RenderSection("Scripts", required: false)
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
 </body>
+
 </html>
+
+

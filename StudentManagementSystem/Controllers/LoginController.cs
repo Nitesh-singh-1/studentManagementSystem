@@ -1,12 +1,22 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using StudentManagementSystem.Models;
-using StudentManagementSystem.Services;
-using Microsoft.AspNetCore.Http;
+﻿using EmployeeManagementSystem.Models;
 
-namespace StudentManagementSystem.Controllers
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using EmployeeManagementSystem.Services;
+
+namespace EmployeeManagementSystem.Controllers
 {
     public class LoginController : Controller
     {
+        private readonly string _connectionString;
+
+        private readonly ApiService _apiService;
+
+        public LoginController(ApiService apiService)
+        {
+            _apiService = apiService;
+        }
+
         public IActionResult Index()
         {
             var captcha = CaptchaService.GenerateCaptchaText();
@@ -18,7 +28,6 @@ namespace StudentManagementSystem.Controllers
         public IActionResult CaptchaImage()
         {
             var captcha = HttpContext.Session.GetString("Captcha");
-
             if (string.IsNullOrEmpty(captcha))
                 captcha = CaptchaService.GenerateCaptchaText();
 
@@ -26,30 +35,41 @@ namespace StudentManagementSystem.Controllers
             return File(imageBytes, "image/png");
         }
 
-
         [HttpPost]
-        public IActionResult Index(LoginViewModel model)
+        public async Task<IActionResult> Index(LoginViewModel model)
         {
             var storedCaptcha = HttpContext.Session.GetString("Captcha");
             if (model.CaptchaCode != storedCaptcha)
             {
                 ModelState.AddModelError("CaptchaCode", "Invalid CAPTCHA.");
-                ViewBag.Captcha = CaptchaService.GenerateCaptchaText();
-                
-                HttpContext.Session.SetString("Captcha", (string)ViewBag.Captcha);
+                var newCaptcha = CaptchaService.GenerateCaptchaText();
+                HttpContext.Session.SetString("Captcha", newCaptcha);
+                ViewBag.Captcha = newCaptcha;
+                ModelState.SetModelValue("CaptchaCode", new Microsoft.AspNetCore.Mvc.ModelBinding.ValueProviderResult(string.Empty));
                 return View(model);
             }
 
-            if (model.Username == "admin" && model.Password == "admin123")
+            //if (!ModelState.IsValid)
+            //    return View(model);
+
+            var (success, role, error) = await _apiService.LoginAsync(model.Username, model.Password);
+
+            if (!success)
             {
-                HttpContext.Session.SetString("IsLoggedIn", "true");
-                return RedirectToAction("Index", "Student"); // next step
+                ModelState.AddModelError("", error ?? "Invalid username or password.");
+                return View(model);
             }
 
-            ModelState.AddModelError("", "Invalid credentials");
-            ViewBag.Captcha = CaptchaService.GenerateCaptchaText();
-            HttpContext.Session.SetString("Captcha", (string)ViewBag.Captcha);
-            return View(model);
+            HttpContext.Session.SetString("IsLoggedIn", "true");
+            HttpContext.Session.SetString("Username", model.Username);
+            HttpContext.Session.SetString("UserRole", role!);
+
+            return role switch
+            {
+                "Operator" => RedirectToAction("Index", "Employee"),
+                "Supervisor" => RedirectToAction("Dashboard", "Supervisor"),
+                _ => RedirectToAction("Index")
+            };
         }
 
         public IActionResult RefreshCaptcha()
@@ -58,6 +78,7 @@ namespace StudentManagementSystem.Controllers
             HttpContext.Session.SetString("Captcha", captcha);
             return Json(new { captcha });
         }
+
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();

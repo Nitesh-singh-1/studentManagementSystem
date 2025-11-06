@@ -1,4 +1,4 @@
-﻿@model List<StudentManagementSystem.Models.Student>
+﻿@model List<EmployeeManagementSystem.Models.Employee>
 @{
     Layout = null; // No layout so it prints clean
     var cls = ViewBag.Class as string;
@@ -45,8 +45,8 @@
             @foreach (var student in Model)
             {
                 <tr>
-                    <td>@student.RollNumber</td>
-                    <td>@student.StudentName</td>
+                    <td>@student.EmployeeName</td>
+                    <td>@student.Designation</td>
                     <td>@student.Age</td>
                     <td>@student.Gender</td>
                     <td>@student.Address</td>

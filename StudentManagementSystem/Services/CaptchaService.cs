@@ -2,7 +2,7 @@
 using System.Drawing.Imaging;
 using System.IO;
 
-namespace StudentManagementSystem.Services
+namespace EmployeeManagementSystem.Services
 {
     public static class CaptchaService
     {

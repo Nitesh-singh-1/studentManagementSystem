@@ -1,0 +1,255 @@
+﻿using EmployeeManagementSystem.Models;
+using Newtonsoft.Json.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+namespace EmployeeManagementSystem.Services
+{
+    public class ApiService
+    {
+        private readonly HttpClient _httpClient;
+        private readonly string _baseUrl;
+
+        public ApiService(HttpClient httpClient, IConfiguration configuration)
+        {
+            _httpClient = httpClient;
+            _baseUrl = configuration["ApiSettings:BaseUrl"];
+        }
+
+        public async Task<(bool success, string? role, string? errorMessage)> LoginAsync(string username, string password)
+        {
+            var payload = new { id = "0", Username = username, Password = password, role = "" };
+            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync($"{_baseUrl}/LoginApi/login", content);
+
+            var json = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                using var doc = JsonDocument.Parse(json);
+                string role = doc.RootElement.GetProperty("role").GetString()!;
+                return (true, role, null);
+            }
+            else
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(json);
+                    string message = doc.RootElement.TryGetProperty("message", out var msgProp)
+                        ? msgProp.GetString() ?? "Unknown error"
+                        : "Unknown error";
+                    return (false, null, message);
+                }
+                catch
+                {
+                    return (false, null, json);
+                }
+            }
+        }
+
+        public async Task<List<EmployeeResponse>?> GetAllEmployeesAsync()
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"{_baseUrl}/Employee/getAll");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var employees = JsonSerializer.Deserialize<List<EmployeeResponse>>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    return employees;
+                }
+                else
+                {
+                    // log or inspect response for debugging
+                    var msg = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error: {msg}");
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<EmployeeResponse> getEmployeeById(int id)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"{_baseUrl}/Employee/GetEmpById/{id}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var employees = JsonSerializer.Deserialize<EmployeeResponse>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    return employees;
+                }
+                else
+                {
+                    // log or inspect response for debugging
+                    var msg = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error: {msg}");
+                    return null;
+                }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"Exception: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<bool> UpdateEmployee(EmployeeResponse employee)
+        {
+            using var formData = new MultipartFormDataContent();
+
+            formData.Add(new StringContent(employee.employeeName ?? ""), "EmployeeName");
+            formData.Add(new StringContent(employee.department ?? ""), "Department");
+            formData.Add(new StringContent(employee.designation ?? ""), "Designation");
+            formData.Add(new StringContent(employee.age.ToString()), "Age");
+            formData.Add(new StringContent(employee.gender ?? ""), "Gender");
+            formData.Add(new StringContent(employee.address ?? ""), "Address");
+
+            // Attach files (if any)
+            if (employee.employeeDocuments != null && employee.employeeDocuments.Count > 0)
+            {
+                foreach (var doc in employee.employeeDocuments)
+                {
+                    if (doc.ImageData != null)
+                    {
+                        var fileContent = new ByteArrayContent(doc.ImageData);
+                        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg");
+                        formData.Add(fileContent, "Documents", doc.FileName);
+                    }
+                }
+            }
+
+            var response = await _httpClient.PostAsync($"{_baseUrl}/Employee/edit/{employee.Id}", formData);
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<DeleteResponse> DeleteDocument(int id)
+        {
+            try
+            {
+                var response = await _httpClient.DeleteAsync($"{_baseUrl}/Employee/deleteImg/{id}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var deleteResponse = JsonSerializer.Deserialize<DeleteResponse>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    return deleteResponse;
+                }
+                else
+                {
+                    // log or inspect response for debugging
+                    var msg = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error: {msg}");
+                    return null;
+                }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"Exception: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<EmployeeResponse?> AddEmployee(EmployeeResponse employee, List<IFormFile>? documents = null)
+        {
+            using var formData = new MultipartFormDataContent();
+
+            // 🧩 Add normal fields (match API property names)
+            formData.Add(new StringContent(employee.employeeName ?? ""), "EmployeeName");
+            formData.Add(new StringContent(employee.department ?? ""), "Department");
+            formData.Add(new StringContent(employee.designation ?? ""), "Designation");
+            formData.Add(new StringContent(employee.age.ToString()), "Age");
+            formData.Add(new StringContent(employee.gender ?? ""), "Gender");
+            formData.Add(new StringContent(employee.address ?? ""), "Address");
+
+            // 🧩 Add file(s)
+            if (documents != null && documents.Count > 0)
+            {
+                foreach (var file in documents)
+                {
+                    var fileStream = new StreamContent(file.OpenReadStream());
+                    fileStream.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+                    formData.Add(fileStream, "Documents", file.FileName);
+                }
+            }
+
+            // 🧩 Send POST request to API
+            var response = await _httpClient.PostAsync($"{_baseUrl}/Employee/add", formData);
+
+            // 🧩 Check success
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"❌ API Error: {error}");
+                return null;
+            }
+
+            // 🧩 Parse response (e.g., {"message": "...", "employeeId": 8})
+            var content = await response.Content.ReadAsStringAsync();
+            var json = JObject.Parse(content);
+
+            return new EmployeeResponse
+            {
+                Id = json.Value<int>("employeeId"),
+                employeeName = employee.employeeName,
+                department = employee.department,
+                designation = employee.designation,
+                age = employee.age,
+                gender = employee.gender,
+                address = employee.address
+            };
+        }
+
+        public async Task<delResponse> DeleteEmp(int id)
+        {
+            try
+            {
+                var response = await _httpClient.DeleteAsync($"{_baseUrl}/Employee/delete/{id}");
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var deleteResponse = JsonSerializer.Deserialize<delResponse>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    return deleteResponse;
+                }
+                else
+                {
+                    // log or inspect response for debugging
+                    var msg = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error: {msg}");
+                    return null;
+                }
+            }
+            catch(Exception ex)
+            {
+
+                Console.WriteLine($"Exception: {ex.Message}");
+                return null;
+            }
+        }
+    }
+
+}
