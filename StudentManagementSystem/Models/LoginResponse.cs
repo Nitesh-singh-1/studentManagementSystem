@@ -17,6 +17,9 @@
         public string address { get; set; }
         public bool? isApproved { get; set; }
         public string? Remarks { get; set; }
+        public int? createdBy { get; set; }
+        public int? modifiedBy { get; set; }
+        
         public List<EmployeeDocument> employeeDocuments { get; set; } = new();
     }
 

@@ -1,0 +1,219 @@
+﻿@model List<EmployeeManagementSystem.Models.UserViewModel>
+@{
+    ViewData["Title"] = "Users";
+}
+@{
+    string selectedRole = ViewBag.SelectedRole ?? "All";
+    var adminId = Context.Session.GetInt32("UserId") ?? 0;
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Users</h3>
+
+    <div class="d-flex align-items-center gap-2">
+        <label for="Role" class="form-label mb-0 me-2">Role:</label>
+            <select name="Role" id="Role" class="form-select form-select-sm w-auto">
+                <option value="All" selected="@(ViewBag.SelectedRole == "All")">All</option>
+                <option value="Supervisor" selected="@(ViewBag.SelectedRole == "Supervisor")">Supervisor</option>
+                <option value="Operator" selected="@(ViewBag.SelectedRole == "Operator")">Operator</option>
+            </select>
+
+        <button class="btn btn-primary btn-sm" id="addSupervisorBtn" data-bs-toggle="modal" data-bs-target="#supervisorModal">
+            + Add User
+        </button>
+    </div>
+</div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info text-center">No Supervisor found.</div>
+    }
+    else
+    {
+        <table class="table table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>Sr.No.</th>
+                    <th>Username</th>
+                    <th>Password</th>
+                    <th>Role</th>
+                    <th>Reports To</th>
+                    <th>Created On</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.Count; i++)
+                {
+                    <tr data-id="@Model[i].Id"
+                        data-username="@Model[i].Username"
+                        data-password="@Model[i].Password">
+                        <td>@(i + 1)</td>
+                        <td>@Model[i].Username</td>
+                        <td>@Model[i].Password</td>
+                        <td>@Model[i].Role</td>
+                        <td>@Model[i].ReportingPerson</td>
+                        <td>@Model[i].CreatedOn.ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-warning edit-btn" data-bs-toggle="modal" data-bs-target="#supervisorModal">
+                                Edit
+                            </button>
+                            <button type="button"
+                                    class="btn btn-sm btn-danger delete-btn"
+                                    data-id="@Model[i].Id"
+                                    data-username="@Model[i].Username">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+<!-- Modal (used for both Add + Edit) -->
+<!-- Modal -->
+<div class="modal fade" id="supervisorModal" tabindex="-1" aria-labelledby="supervisorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="userForm">
+                <input type="hidden" name="Id" id="UserId" />
+                <input type="hidden" name="CreatedBy" value="@adminId" />
+
+                <!-- 1️⃣ Role: defines what type of user is being created -->
+                <div class="mb-3">
+                    <label class="form-label">Role</label>
+                    <select name="Role" id="RoleDropdown" class="form-select" required>
+                        <option value="">-- Select Role --</option>
+                        <option value="Supervisor">Supervisor</option>
+                        <option value="Operator">Operator</option>
+                    </select>
+                </div>
+
+                <!-- Username & Password -->
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="Username" id="Username" class="form-control" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="Password" id="Password" class="form-control" required />
+                </div>
+
+                <!-- 2️⃣ Reports To: defines who they will report to -->
+                <div class="mb-3" id="reportsToWrapper">
+                    <label class="form-label">Reports To</label>
+                    <select name="ParentUserId" id="ReportsToId" class="form-select">
+                        <option value="">-- Select Supervisor --</option>
+                        @if (ViewBag.Supervisors != null)
+                        {
+                            foreach (var sup in ViewBag.Supervisors)
+                            {
+                                <option value="@sup.Id">@sup.Username</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <input type="hidden" id="AdminId" value="@adminId" />
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success" id="modalSubmitBtn">Save</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+            let isEditMode = false;
+         $("#reportsToWrapper").hide();
+        // When Add button clicked
+        $("#addSupervisorBtn").on("click", function () {
+            isEditMode = false;
+            $("#supervisorModalLabel").text("Create User");
+            $("#modalSubmitBtn").text("Create");
+            $("#UserId").val("");
+            $("#Username").val("");
+            $("#Password").val("");
+            $("#Role").val("Supervisor"); // Default to Supervisor when opened from this page
+        });
+
+        // When Edit button clicked
+        $(".edit-btn").on("click", function () {
+            isEditMode = true;
+
+            const row = $(this).closest("tr");
+            const id = row.data("id");
+            const username = row.data("username");
+            const password = row.data("password");
+
+            $("#supervisorModalLabel").text("Edit Supervisor");
+            $("#modalSubmitBtn").text("Update");
+            $("#UserId").val(id);
+            $("#Username").val(username);
+            $("#Password").val(password);
+            $("#Role").val("Supervisor");
+        });
+
+        // Create or Update user
+        $("#userForm").on("submit", function (e) {
+            e.preventDefault();
+
+            const url = isEditMode
+                ? '@Url.Action("UpdateSupervisor", "Admin")'
+                : '@Url.Action("CreateUser", "Admin")';
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: $(this).serialize(),
+                success: function (res) {
+                    if (res.success) {
+                        alert(res.message || "User created successfully!");
+                        location.reload();
+                    } else {
+                        alert(res.message || "Error while creating user.");
+                    }
+                },
+                error: function () {
+                    alert("Server error.");
+                }
+            });
+        });
+
+            $("#Role").on("change", function () {
+            const selectedRole = $(this).val();
+            window.location.href = '@Url.Action("Supervisors", "Admin")' + '?role=' + selectedRole;
+        });
+
+                $("#RoleDropdown").on("change", function () {
+            const selectedRole = $(this).val();
+
+            const adminId = $("#AdminId").val();
+
+            if (selectedRole === "Supervisor") {
+                // Supervisor → reports to Admin (auto-fill)
+                $("#reportsToWrapper").hide();
+                $("#ReportsToId").val(adminId);
+            }
+            else if (selectedRole === "Operator") {
+                // Operator → must select Supervisor manually
+                $("#reportsToWrapper").show();
+                $("#ReportsToId").val("");
+            }
+            else {
+                $("#reportsToWrapper").hide();
+                $("#ReportsToId").val("");
+            }
+        });
+
+         
+    </script>
+}

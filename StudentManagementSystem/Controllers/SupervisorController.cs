@@ -22,7 +22,18 @@ namespace EmployeeManagementSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> Dashboard(string? searchTerm)
         {
-            var employees = await _apiService.GetAllEmployeesAsync();
+            var UserId = HttpContext.Session.GetInt32("UserId");
+            var userRole = HttpContext.Session.GetString("UserRole");
+            List<EmployeeResponse>? employees;
+
+            if (userRole == "Supervisor")
+            {
+                employees = await _apiService.GetAllEmp_supervisor_Async(0, UserId);
+            }
+            else
+            {
+                employees = await _apiService.GetAllEmployeesAsync(UserId);
+            }
 
             if (employees == null)
             {

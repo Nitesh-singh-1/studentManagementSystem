@@ -8,14 +8,15 @@
                 </button>
 
                 <a class="navbar-brand fw-bold text-primary" asp-controller="Employee" asp-action="Index">
-                    <i class="bi bi-people-fill me-2"></i>Employee Management System
+                    <i class="bi bi-people-fill me-2"></i>Document Management System
                 </a>
             </div>
 
             <!-- Right Section: User Info -->
             <div class="d-flex align-items-center">
                 <span class="me-3 fw-semibold text-secondary">
-                    <i class="bi bi-person-circle me-1"></i>@Context.Session.GetString("UserRole")
+                    Logged in as :
+                    <i class="bi bi-person-circle me-1"></i>@Context.Session.GetString("Username") ( @Context.Session.GetString("UserRole") )
                     @if (ViewBag.Role != null)
                     {
                         <span class="badge bg-primary ms-1">@ViewBag.Role</span>
@@ -38,6 +39,28 @@
 
     <div class="offcanvas-body d-flex flex-column">
         <ul class="nav nav-pills flex-column gap-1">
+
+            @if (Context.Session.GetString("UserRole") == "Admin")
+            {
+                <li class="nav-item">
+                    <a class="nav-link @(ViewBag.Title == "Admin Dashboard" ? "active" : "")"
+                       asp-controller="Admin" asp-action="AdminDashboard">
+                        <i class="fa-solid fa-gauge-high me-2"></i> Admin Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewBag.Title == "Manage Users" ? "active" : "")"
+                       asp-controller="Admin" asp-action="Supervisors">
+                        <i class="fa-solid fa-users me-2"></i> Manage Users
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @(ViewBag.Title == "Reports" ? "active" : "")"
+                       asp-controller="Report" asp-action="AdminIndex">
+                        <i class="fa-solid fa-chart-line me-2"></i> Reports
+                    </a>
+                </li>
+            }
 
             <!-- 👷 Operator Menu -->
             @if (Context.Session.GetString("UserRole") == "Operator")

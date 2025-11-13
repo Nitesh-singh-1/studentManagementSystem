@@ -41,8 +41,8 @@ namespace EmployeeManagementSystem.Controllers
 
             if (!ModelState.IsValid)
                 return View(model);
-
-            var result = await _apiService.AddEmployee(model, documents);
+            var createdBy = HttpContext.Session.GetInt32("UserId");
+            var result = await _apiService.AddEmployee(Convert.ToInt32(createdBy),model, documents);
 
             if (result != null)
             {
@@ -212,8 +212,8 @@ namespace EmployeeManagementSystem.Controllers
                     });
                 }
             }
-
-            var result = await _apiService.UpdateEmployee(model);
+            var createdBy = HttpContext.Session.GetInt32("UserId");
+            var result = await _apiService.UpdateEmployee(model,documents);
 
             if (result)
                 return RedirectToAction("Index", "Report");

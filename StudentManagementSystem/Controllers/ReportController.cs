@@ -19,7 +19,8 @@ public class ReportController : Controller
 
     public async Task<IActionResult> Index()
     {
-        var employees = await _apiService.GetAllEmployeesAsync();
+        var UserId = HttpContext.Session.GetInt32("UserId");
+        var employees = await _apiService.GetAllEmployeesAsync(UserId);
 
         if (employees == null)
         {
@@ -239,4 +240,24 @@ public class ReportController : Controller
         return RedirectToAction("Index");
     }
 
+    public async Task<IActionResult> AdminIndex(string role = "All", int? userId = null, DateOnly? startDate = null, DateOnly? endDate = null)
+    {
+        var userRole = HttpContext.Session.GetString("UserRole");
+        var adminId = HttpContext.Session.GetInt32("UserId");
+
+        if (userRole != "Admin")
+            return RedirectToAction("Index", "Login");
+
+        var reports = await _apiService.GetUserReportAsync(role, userId, startDate, endDate);
+        ViewBag.SelectedRole = role;
+        return View(reports);
+    }
+
+    // For Supervisor
+    public async Task<IActionResult> SupervisorReport(DateTime? start = null, DateTime? end = null)
+    {
+        var supervisorId = HttpContext.Session.GetInt32("UserId");
+        var reports = await _apiService.GetSupervisorReportAsync(supervisorId ?? 0, start, end);
+        return View(reports);
+    }
 }

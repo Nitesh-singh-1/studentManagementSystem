@@ -18,7 +18,7 @@ namespace EmployeeManagementSystem.Services
             _baseUrl = configuration["ApiSettings:BaseUrl"];
         }
 
-        public async Task<(bool success, string? role, string? errorMessage)> LoginAsync(string username, string password)
+        public async Task<(bool success, int? id, string? role, string? errorMessage)> LoginAsync(string username, string password)
         {
             var payload = new { id = "0", Username = username, Password = password, role = "" };
             var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
@@ -30,8 +30,9 @@ namespace EmployeeManagementSystem.Services
             if (response.IsSuccessStatusCode)
             {
                 using var doc = JsonDocument.Parse(json);
+                int id = doc.RootElement.GetProperty("id").GetInt32();
                 string role = doc.RootElement.GetProperty("role").GetString()!;
-                return (true, role, null);
+                return (true, id, role, null);
             }
             else
             {
@@ -41,20 +42,51 @@ namespace EmployeeManagementSystem.Services
                     string message = doc.RootElement.TryGetProperty("message", out var msgProp)
                         ? msgProp.GetString() ?? "Unknown error"
                         : "Unknown error";
-                    return (false, null, message);
+                    return (false, null,null, message);
                 }
                 catch
                 {
-                    return (false, null, json);
+                    return (false,null, null, json);
                 }
             }
         }
 
-        public async Task<List<EmployeeResponse>?> GetAllEmployeesAsync()
+        public async Task<List<EmployeeResponse>?> GetAllEmployeesAsync(int? userID)
         {
             try
             {
-                var response = await _httpClient.GetAsync($"{_baseUrl}/Employee/getAll");
+                var response = await _httpClient.GetAsync($"{_baseUrl}/Employee/getAll?userId={userID}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var employees = JsonSerializer.Deserialize<List<EmployeeResponse>>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    return employees;
+                }
+                else
+                {
+                    // log or inspect response for debugging
+                    var msg = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error: {msg}");
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<List<EmployeeResponse>?> GetAllEmp_supervisor_Async(int? userID,int? superVisorID)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"{_baseUrl}/Employee/getAllEmployee?userId={userID}&superVisorID={superVisorID}");
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -111,7 +143,7 @@ namespace EmployeeManagementSystem.Services
             }
         }
 
-        public async Task<bool> UpdateEmployee(EmployeeResponse employee)
+        public async Task<bool> UpdateEmployee(EmployeeResponse employee, List<IFormFile>? documents = null)
         {
             using var formData = new MultipartFormDataContent();
 
@@ -121,18 +153,15 @@ namespace EmployeeManagementSystem.Services
             formData.Add(new StringContent(employee.age.ToString()), "Age");
             formData.Add(new StringContent(employee.gender ?? ""), "Gender");
             formData.Add(new StringContent(employee.address ?? ""), "Address");
-
-            // Attach files (if any)
-            if (employee.employeeDocuments != null && employee.employeeDocuments.Count > 0)
+            formData.Add(new StringContent(employee.modifiedBy.ToString()), "ModifiedBy");
+            // 🧩 Add file(s)
+            if (documents != null && documents.Count > 0)
             {
-                foreach (var doc in employee.employeeDocuments)
+                foreach (var file in documents)
                 {
-                    if (doc.ImageData != null)
-                    {
-                        var fileContent = new ByteArrayContent(doc.ImageData);
-                        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/jpeg");
-                        formData.Add(fileContent, "Documents", doc.FileName);
-                    }
+                    var fileStream = new StreamContent(file.OpenReadStream());
+                    fileStream.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+                    formData.Add(fileStream, "Documents", file.FileName);
                 }
             }
 
@@ -170,7 +199,7 @@ namespace EmployeeManagementSystem.Services
             }
         }
 
-        public async Task<EmployeeResponse?> AddEmployee(EmployeeResponse employee, List<IFormFile>? documents = null)
+        public async Task<EmployeeResponse?> AddEmployee(int createdBy,EmployeeResponse employee, List<IFormFile>? documents = null)
         {
             using var formData = new MultipartFormDataContent();
 
@@ -181,6 +210,7 @@ namespace EmployeeManagementSystem.Services
             formData.Add(new StringContent(employee.age.ToString()), "Age");
             formData.Add(new StringContent(employee.gender ?? ""), "Gender");
             formData.Add(new StringContent(employee.address ?? ""), "Address");
+            formData.Add(new StringContent(createdBy.ToString() ?? ""), "createdBy");
 
             // 🧩 Add file(s)
             if (documents != null && documents.Count > 0)
@@ -207,7 +237,7 @@ namespace EmployeeManagementSystem.Services
             // 🧩 Parse response (e.g., {"message": "...", "employeeId": 8})
             var content = await response.Content.ReadAsStringAsync();
             var json = JObject.Parse(content);
-
+           
             return new EmployeeResponse
             {
                 Id = json.Value<int>("employeeId"),
@@ -216,7 +246,9 @@ namespace EmployeeManagementSystem.Services
                 designation = employee.designation,
                 age = employee.age,
                 gender = employee.gender,
-                address = employee.address
+                address = employee.address,
+                createdBy = createdBy,
+
             };
         }
 
@@ -249,6 +281,57 @@ namespace EmployeeManagementSystem.Services
                 Console.WriteLine($"Exception: {ex.Message}");
                 return null;
             }
+        }
+
+        public async Task<List<UserViewModel>> GetUsersAsync(int adminId, string role)
+        {
+            var response = await _httpClient.GetAsync($"{_baseUrl}/AdminApi/GetUsers?adminId={adminId}&role={role}");
+            if (!response.IsSuccessStatusCode) return new List<UserViewModel>();
+
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<List<UserViewModel>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<UserViewModel>();
+        }
+        public async Task<object> CreateUserAsync(UserViewModel model)
+        {
+            var jsonContent = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync($"{_baseUrl}/AdminApi/CreateUser", jsonContent);
+            var result = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<object>(result);
+        }
+
+        public async Task<object> UpdateUserAsync(UserViewModel model)
+        {
+            var jsonContent = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync($"{_baseUrl}/AdminApi/UpdateUser", jsonContent);
+            var result = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<object>(result);
+        }
+
+        public async Task<object> DeleteUserAsync(int id)
+        {
+            var response = await _httpClient.DeleteAsync($"{_baseUrl}/AdminApi/DeleteUser/{id}");
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<object>(json);
+        }
+
+        public async Task<List<UserReportViewModel>> GetUserReportAsync(string role, int? userId, DateOnly? start, DateOnly? end)
+        {
+            string url = $"{_baseUrl}/ReportApi/GetUserReport?role={role}&userId={userId}&startDate={start:yyyy-MM-dd}&endDate={end:yyyy-MM-dd}";
+            var response = await _httpClient.GetAsync(url);
+            if (!response.IsSuccessStatusCode) return new List<UserReportViewModel>();
+
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<List<UserReportViewModel>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<UserReportViewModel>();
+        }
+
+        public async Task<List<SupervisorReportViewModel>> GetSupervisorReportAsync(int supervisorId, DateTime? start, DateTime? end)
+        {
+            string url = $"{_baseUrl}/ReportApi/GetSupervisorReport/{supervisorId}?startDate={start:yyyy-MM-dd}&endDate={end:yyyy-MM-dd}";
+            var response = await _httpClient.GetAsync(url);
+            if (!response.IsSuccessStatusCode) return new List<SupervisorReportViewModel>();
+
+            var json = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<List<SupervisorReportViewModel>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<SupervisorReportViewModel>();
         }
     }
 

@@ -4,6 +4,10 @@
 @{
     ViewBag.Title = "Edit Employee";
 }
+@{
+    
+    var userId = Context.Session.GetInt32("UserId") ?? 0;
+}
 
 <div class="container py-4">
     <h2 class="fw-bold mb-1" style="color: var(--text-color); text-align:center;">
@@ -20,7 +24,7 @@
     <!-- ===================== -->
     <form asp-action="Edit" method="post" enctype="multipart/form-data" class="p-4 shadow-sm border-0 bg-white bg-opacity-75">
         <input type="hidden" asp-for="Id" />
-
+        <input type="hidden" value="@userId" asp-for="modifiedBy" />
         <div class="row mb-3">
             <div class="col-md-6">
                 <label asp-for="employeeName" class="form-label">Employee Name</label>

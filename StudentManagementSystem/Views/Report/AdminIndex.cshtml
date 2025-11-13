@@ -1,0 +1,59 @@
+﻿@model List<EmployeeManagementSystem.Models.UserReportViewModel>
+@{
+    ViewData["Title"] = "User Activity Report";
+}
+
+<div class="container mt-4">
+    <h3>User Activity Report</h3>
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-3">
+            <select name="role" class="form-select">
+                <option value="All" selected="@("All" == ViewBag.SelectedRole)">All Roles</option>
+                <option value="Supervisor" selected="@("Supervisor" == ViewBag.SelectedRole)">Supervisors</option>
+                <option value="Operator" selected="@("Operator" == ViewBag.SelectedRole)">Operators</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input type="date" name="startDate" value="@Context.Request.Query["startDate"]" class="form-control" placeholder="Start Date" />
+        </div>
+        <div class="col-md-3">
+            <input type="date" name="endDate" value="@Context.Request.Query["endDate"]" class="form-control" placeholder="End Date" />
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a href="@Url.Action("AdminIndex", "Report")" class="btn btn-secondary">Reset</a>
+        </div>
+    </form>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center">No records found.</div>
+    }
+    else
+    {
+        <table class="table table-bordered table-striped">
+            <thead class="table-light">
+                <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Total Entries</th>
+                    <th>Approved/Rejected</th>
+                    <th>Last Entry</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Username</td>
+                        <td>@item.Role</td>
+                        <td>@item.EntryMade</td>
+                        <td>@item.ApprovedOrRejected</td>
+                        <td>@(item.LastEntry?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

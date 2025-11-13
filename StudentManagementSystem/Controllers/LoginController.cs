@@ -52,7 +52,7 @@ namespace EmployeeManagementSystem.Controllers
             //if (!ModelState.IsValid)
             //    return View(model);
 
-            var (success, role, error) = await _apiService.LoginAsync(model.Username, model.Password);
+            var (success,id, role, error) = await _apiService.LoginAsync(model.Username, model.Password);
 
             if (!success)
             {
@@ -63,11 +63,13 @@ namespace EmployeeManagementSystem.Controllers
             HttpContext.Session.SetString("IsLoggedIn", "true");
             HttpContext.Session.SetString("Username", model.Username);
             HttpContext.Session.SetString("UserRole", role!);
+            HttpContext.Session.SetInt32("UserId", id ?? 0);
 
             return role switch
             {
-                "Operator" => RedirectToAction("Index", "Employee"),
+                "Admin" => RedirectToAction("AdminDashboard", "Admin"),
                 "Supervisor" => RedirectToAction("Dashboard", "Supervisor"),
+                "Operator" => RedirectToAction("Index", "Employee"),
                 _ => RedirectToAction("Index")
             };
         }
