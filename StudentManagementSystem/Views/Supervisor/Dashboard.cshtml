@@ -25,9 +25,9 @@
     @@media (min-width: 1200px) {
         .employee-card
 
-    {
+    /* {
         max-width: 1160px;
-    }
+    } */
 
     }
 
@@ -122,7 +122,8 @@
          
     <script>
         //const apiBaseUrl = '@apiBaseUrl';
-
+                     //const apiBaseUrl = '@apiBaseUrl';
+        const userId = @userId;
                 document.addEventListener('click', function (e) {
             if (e.target.closest('.btn-outline-warning') || e.target.closest('.btn-warning')) {
                 const viewBtn = e.target.closest('a');
@@ -160,7 +161,7 @@
                 const pdfNames = resumes.map(r => r.resumeName);
 
                 // Now get all employees
-                const empResponse = await fetch(`${apiBaseUrl}/Employee/getAll?userId={@userId}`);
+                const empResponse = await fetch(`${apiBaseUrl}/Employee/getAll?userId=${userId}`);
                 const employees = await empResponse.json();
 
                 // Filter employees who have any document name in pdfNames
