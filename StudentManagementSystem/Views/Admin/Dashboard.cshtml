@@ -153,7 +153,7 @@
                 const pdfNames = resumes.map(r => r.resumeName);
 
                 // Now get all employees
-                const empResponse = await fetch(`${apiBaseUrl}/Employee/getAll?userId=${userId}`);
+                const empResponse = await fetch(`${apiBaseUrl}/Employee/getAllEmployeeforAdmin`);
                 const employees = await empResponse.json();
 
                 // Filter employees who have any document name in pdfNames
@@ -195,7 +195,7 @@
                                    <i class="bi bi-eye"></i> View
                                 </a>
                             </td>
-                            @if (Context.Session.GetString("UserRole") == "Supervisor")
+                            @if (Context.Session.GetString("UserRole") == "Supervisor" || Context.Session.GetString("UserRole") == "Admin")
                             {
                                 <text>
                                 <td style="justify-content:space-evenly;display:flex;">
