@@ -39,8 +39,8 @@ namespace EmployeeManagementSystem.Controllers
 
             ViewBag.Departments = GetDepartments();
 
-            if (!ModelState.IsValid)
-                return View(model);
+            //if (!ModelState.IsValid)
+            //    return View(model);
             var createdBy = HttpContext.Session.GetInt32("UserId");
             var result = await _apiService.AddEmployee(Convert.ToInt32(createdBy),model, documents);
 

@@ -12,6 +12,7 @@
                 <option value="All" selected="@("All" == ViewBag.SelectedRole)">All Roles</option>
                 <option value="Supervisor" selected="@("Supervisor" == ViewBag.SelectedRole)">Supervisors</option>
                 <option value="Operator" selected="@("Operator" == ViewBag.SelectedRole)">Operators</option>
+                <option value="Admin" selected="@("Admin" == ViewBag.SelectedRole)">Admin</option>
             </select>
         </div>
         <div class="col-md-3">
@@ -40,6 +41,7 @@
                     <th>Total Entries</th>
                     <th>Approved/Rejected</th>
                     <th>Last Entry</th>
+                    <th>Approved Date</th>
                 </tr>
             </thead>
             <tbody>
@@ -51,6 +53,7 @@
                         <td>@item.EntryMade</td>
                         <td>@item.ApprovedOrRejected</td>
                         <td>@(item.LastEntry?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
+                        <td>@(item.ApprovedOn?.ToString("yyyy-MM-dd HH:mm") ?? "—")</td>
                     </tr>
                 }
             </tbody>

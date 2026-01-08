@@ -158,7 +158,7 @@
 
                 // Filter employees who have any document name in pdfNames
                 const filtered = employees.filter(e =>
-                    e.employeeDocuments?.some(d => pdfNames.includes(d.documentName))
+                    e.employeeDocuments?.some(d => pdfNames.includes(d.fileName))
                 );
                         allEmployees = filtered;
                         currentPage = 1;

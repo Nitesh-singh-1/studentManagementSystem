@@ -12,7 +12,7 @@
     #employeeTable {
         border-radius: 8px;
         min-width: 900px; /* ensures table doesn't shrink too much */
-    }
+    } 
 
         #employeeTable thead {
             background: #f8f9fc;
@@ -225,12 +225,19 @@
                     ? `<span class="badge bg-danger">Rejected</span>`
                     : `<span class="badge bg-secondary">Pending</span>`;
 
-            let actions = `
-                <a href="${encodeURI((apiBaseUrl || '') + '/Employee/ViewEmployeeDocument/' + (emp.id || emp.Id))}"
-                    target="_blank" class="btn btn-sm btn-view me-1" style="background-color: #9cdcbe;color: green;">
-                    <i class="bi bi-eye"></i> View
-                </a>
-            `;
+                let actions = '';
+
+    (emp.employeeDocuments || []).forEach(doc => {
+        actions += `
+            <a href="${apiBaseUrl}/Employee/ViewEmployeeDocument/${emp.Id}?docId=${doc.Id}"
+               target="_blank"
+               class="btn btn-sm btn-view me-1"
+               style="background-color:#9cdcbe;color:green;">
+               <i class="bi bi-eye"></i> View
+            </a>
+        `;
+    });
+
             
             if (userRole === "Supervisor" || userRole ==="Admin") {
                 actions += `
