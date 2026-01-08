@@ -6,7 +6,7 @@
 <div class="container mt-4">
     <h2 class="text-center mb-4">Welcome, @username 👋</h2>
 
-    <div class="row g-2" style="justify-content: space-around;">
+    <div class="row g-3" style="justify-content: space-around;">
         <!-- Card 1 -->
         <div class="col-md-4">
             <div class="card shadow-sm border-0">
@@ -18,14 +18,22 @@
             </div>
         </div>
 
-        
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-info">Manage Entries</h5>
+                    <p class="card-text">Manage Entries</p>
+                    <a href="@Url.Action("Dashboard", "Admin")" class="btn btn-outline-info">Manage Entries</a>
+                </div>
+            </div>
+        </div>
 
         <!-- Card 3 -->
         <div class="col-md-4">
             <div class="card shadow-sm border-0">
                 <div class="card-body text-center">
                     <h5 class="card-title text-info">Reports</h5>
-                    <p class="card-text">Generate and export system usage or employee reports.</p>
+                    <p class="card-text">Generate employee reports.</p>
                     <a href="@Url.Action("AdminIndex", "Report")" class="btn btn-outline-info">Generate Reports</a>
                 </div>
             </div>

@@ -75,6 +75,41 @@ namespace EmployeeManagementSystem.Controllers
             return Json(result);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Dashboard(string? searchTerm)
+        {
+            var UserId = HttpContext.Session.GetInt32("UserId");
+            var userRole = HttpContext.Session.GetString("UserRole");
+            List<EmployeeResponse>? employees;
+
+            //if (userRole == "Admin")
+            //{
+            employees = await _apiService.getAllEmployeeForAdmin();
+            //}
+            
+
+            if (employees == null)
+            {
+                ViewBag.Error = "Unable to fetch employee data from the API.";
+                return View(new List<EmployeeResponse>());
+            }
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                searchTerm = searchTerm.ToLower();
+
+                employees = employees
+                    .Where(e =>
+                        (e.employeeName?.ToLower().Contains(searchTerm) ?? false) ||
+                        (e.department?.ToLower().Contains(searchTerm) ?? false) ||
+                        (e.designation?.ToLower().Contains(searchTerm) ?? false)
+                    )
+                    .ToList();
+            }
+
+            ViewBag.SearchTerm = searchTerm;
+            return View(employees);
+        }
 
 
     }

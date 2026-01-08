@@ -167,6 +167,10 @@
                     <th>Address</th>
                     <th>Status</th>
                     <th>Remark</th>
+                    @if (userRole == "Admin")
+                    {
+                        <th class="text-center">Entry By</th>
+                    }
                     <th class="text-center">Action</th>
                 </tr>
             </thead>
@@ -227,8 +231,8 @@
                     <i class="bi bi-eye"></i> View
                 </a>
             `;
-
-            if (userRole === "Supervisor") {
+            
+            if (userRole === "Supervisor" || userRole ==="Admin") {
                 actions += `
                     <button class="btn btn-sm btn-approve me-1" onclick="openRemarkModal(${emp.id || emp.Id}, true)">Approve</button>
                     <button class="btn btn-sm btn-reject" onclick="openRemarkModal(${emp.id || emp.Id}, false)">Reject</button>
@@ -259,6 +263,10 @@
                     <td class="remark-cell" title="${emp.address || ''}">${emp.address || ''}</td>
                     <td>${statusBadge}</td>
                     <td class="remark-cell" title="${emp.remarks || emp.Remarks || ''}">${emp.remarks || emp.Remarks || ''}</td>
+                     ${userRole === "Admin"
+        ? `<td class="text-center">${emp.enteryMadeBy || ''}</td>`
+        : ''
+    }
                     <td class="text-center">${actions}</td>
                 </tr>
             `;

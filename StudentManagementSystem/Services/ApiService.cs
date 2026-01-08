@@ -113,6 +113,34 @@ namespace EmployeeManagementSystem.Services
             }
         }
 
+        public async Task<List<EmployeeResponse>?> getAllEmployeeForAdmin()
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"{_baseUrl}/Employee/getAllEmployeeforAdmin");
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    var employees = JsonSerializer.Deserialize<List<EmployeeResponse>>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    return employees;
+                }
+                else
+                {
+                    var msg = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error: {msg}");
+                    return null;
+                }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"Exception: {ex.Message}");
+                return null;
+            }
+        }
         public async Task<EmployeeResponse> getEmployeeById(int id)
         {
             try
