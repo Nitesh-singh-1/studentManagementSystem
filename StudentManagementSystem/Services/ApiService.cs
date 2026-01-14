@@ -1,4 +1,5 @@
 ﻿using EmployeeManagementSystem.Models;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using System.Text;
@@ -175,13 +176,23 @@ namespace EmployeeManagementSystem.Services
         {
             using var formData = new MultipartFormDataContent();
 
-            formData.Add(new StringContent(employee.employeeName ?? ""), "EmployeeName");
-            formData.Add(new StringContent(employee.department ?? ""), "Department");
-            formData.Add(new StringContent(employee.designation ?? ""), "Designation");
-            formData.Add(new StringContent(employee.age.ToString()), "Age");
-            formData.Add(new StringContent(employee.gender ?? ""), "Gender");
-            formData.Add(new StringContent(employee.address ?? ""), "Address");
+            //formData.Add(new StringContent(employee.employeeName ?? ""), "EmployeeName");
+            //formData.Add(new StringContent(employee.department ?? ""), "Department");
+            //formData.Add(new StringContent(employee.designation ?? ""), "Designation");
+            //formData.Add(new StringContent(employee.age.ToString()), "Age");
+            //formData.Add(new StringContent(employee.gender ?? ""), "Gender");
+            //formData.Add(new StringContent(employee.address ?? ""), "Address");
             formData.Add(new StringContent(employee.modifiedBy.ToString()), "ModifiedBy");
+            formData.Add(new StringContent(employee.employeeName ?? ""), "EmployeeName");//colNo
+            formData.Add(new StringContent(employee.department ?? ""), "Department");//File No
+            formData.Add(new StringContent(employee.designation ?? ""), "Designation");//Part No
+                                                                                       // formData.Add(new StringContent(employee.age.ToString()), "Age");
+            formData.Add(new StringContent(employee.subject ?? ""), "subject");//Subject
+                                                                               //formData.Add(new StringContent(employee.gender ?? ""), "Gender");
+            formData.Add(new StringContent(employee.address ?? ""), "Address");//from year
+            formData.Add(new StringContent(employee.ToYear ?? ""), "ToYear");// to Year
+            formData.Add(new StringContent(employee.Remarks ?? ""), "Remarks");
+           // formData.Add(new StringContent(createdBy.ToString() ?? ""), "createdBy");
             // 🧩 Add file(s)
             if (documents != null && documents.Count > 0)
             {
@@ -232,12 +243,15 @@ namespace EmployeeManagementSystem.Services
             using var formData = new MultipartFormDataContent();
 
             // 🧩 Add normal fields (match API property names)
-            formData.Add(new StringContent(employee.employeeName ?? ""), "EmployeeName");
-            formData.Add(new StringContent(employee.department ?? ""), "Department");
-            formData.Add(new StringContent(employee.designation ?? ""), "Designation");
-            formData.Add(new StringContent(employee.age.ToString()), "Age");
-            formData.Add(new StringContent(employee.gender ?? ""), "Gender");
-            formData.Add(new StringContent(employee.address ?? ""), "Address");
+            formData.Add(new StringContent(employee.employeeName ?? ""), "EmployeeName");//colNo
+            formData.Add(new StringContent(employee.department ?? ""), "Department");//File No
+            formData.Add(new StringContent(employee.designation ?? ""), "Designation");//Part No
+            // formData.Add(new StringContent(employee.age.ToString()), "Age");
+            formData.Add(new StringContent(employee.subject ?? ""), "subject");//Subject
+            //formData.Add(new StringContent(employee.gender ?? ""), "Gender");
+            formData.Add(new StringContent(employee.address ?? ""), "Address");//from year
+            formData.Add(new StringContent(employee.ToYear ?? ""), "ToYear");// to Year
+            formData.Add(new StringContent(employee.Remarks ?? ""), "Remarks");
             formData.Add(new StringContent(createdBy.ToString() ?? ""), "createdBy");
 
             // 🧩 Add file(s)

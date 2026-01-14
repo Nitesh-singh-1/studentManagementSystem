@@ -99,7 +99,7 @@
 </head>
 <body>
     <div class="container">
-        <h2>Employee Registration</h2>
+        <h2>Registration</h2>
 
         @if (ViewBag.Success != null)
         {
@@ -114,49 +114,57 @@
         <form asp-action="Index" enctype="multipart/form-data" method="post">
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label asp-for="employeeName" class="form-label">Employee Name</label>
-                    <input asp-for="employeeName" class="form-control" placeholder="Enter employee name" />
+                    <label asp-for="employeeName" class="form-label">Col No.</label>
+                    <input asp-for="employeeName" class="form-control" placeholder="Enter Col No" />
                     <span asp-validation-for="employeeName" class="text-danger"></span>
                 </div>
 
-                <div class="col-md-6 mb-3">
+               @*  <div class="col-md-6 mb-3">
                     <label asp-for="department" class="form-label">Department</label>
                     <select asp-for="department" class="form-control" asp-items="@(new SelectList(ViewBag.Departments))">
                         <option value="">-- Select Department --</option>
                     </select>
+                    <span asp-validation-for="department" class="text-danger"></span>
+                </div> *@
+                <div class="col-md-6 mb-3">
+                    <label asp-for="department" class="form-label">File No.</label>
+                    <input asp-for="department" class="form-control" placeholder="Enter File No." />
                     <span asp-validation-for="department" class="text-danger"></span>
                 </div>
             </div>
 
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label asp-for="designation" class="form-label">Designation</label>
-                    <input asp-for="designation" class="form-control" placeholder="Enter designation" />
+                    <label asp-for="designation" class="form-label">Part No.</label>
+                    <input asp-for="designation" class="form-control" placeholder="Enter Part No." />
                     <span asp-validation-for="designation" class="text-danger"></span>
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label asp-for="age" class="form-label">Age</label>
-                    <input asp-for="age" type="number" class="form-control" placeholder="Enter age" />
-                    <span asp-validation-for="age" class="text-danger"></span>
+                    <label asp-for="subject" class="form-label">Subject</label>
+                    <input asp-for="subject" class="form-control" placeholder="Enter subject" />
+                    <span asp-validation-for="subject" class="text-danger"></span>
                 </div>
             </div>
 
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label asp-for="gender" class="form-label">Gender</label>
+                    @* <label asp-for="gender" class="form-label">Year</label>
                     <select asp-for="gender" class="form-control">
                         <option value="">-- Select Gender --</option>
                         <option>Male</option>
                         <option>Female</option>
                     </select>
-                    <span asp-validation-for="gender" class="text-danger"></span>
+                    <span asp-validation-for="gender" class="text-danger"></span> *@
+                    <label asp-for="address" class="form-label">From Year</label>
+                    <input asp-for="address" class="form-control" placeholder="Enter From Year" />
+                    <span asp-validation-for="address" class="text-danger"></span>
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label asp-for="address" class="form-label">Address</label>
-                    <input asp-for="address" class="form-control" placeholder="Enter address" />
-                    <span asp-validation-for="address" class="text-danger"></span>
+                    <label asp-for="ToYear" class="form-label">To Year</label>
+                    <input asp-for="ToYear" class="form-control" placeholder="Enter To Year" />
+                    <span asp-validation-for="ToYear" class="text-danger"></span>
                 </div>
             </div>
 

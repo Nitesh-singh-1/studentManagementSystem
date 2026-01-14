@@ -25,6 +25,10 @@
         public string createdon { get; set; }
         public string enteryMadeBy { get; set; }
 
+        public string subject { get; set; }
+        public string ToYear { get; set; }
+        public bool IsDeleteRequested { get; set; }
+        public bool IsDeleted { get; set; }
         public List<EmployeeDocument> employeeDocuments { get; set; } = new();
     }
 

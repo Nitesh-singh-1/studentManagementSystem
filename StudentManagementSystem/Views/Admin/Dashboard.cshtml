@@ -171,20 +171,38 @@
                 tableBody.innerHTML = "";
 
                 filtered.forEach(emp => {
-                    const statusBadge = emp.isApproved === true
-                        ? `<span class="badge bg-success">Approved</span>`
-                        : emp.isApproved === false
-                            ? `<span class="badge bg-danger">Rejected</span>`
-                            : `<span class="badge bg-secondary">Pending</span>`;
+                    // const statusBadge = emp.isApproved === true
+                    //     ? `<span class="badge bg-success">Approved</span>`
+                    //     : emp.isApproved === false
+                    //         ? `<span class="badge bg-danger">Rejected</span>`
+                    //         : `<span class="badge bg-secondary">Pending</span>`;
+                    let statusBadge = '';
+
+if (emp.isDeleted) {
+    statusBadge = `<span class="badge bg-danger">Delete Approved</span>`;
+}
+else if (emp.isDeleteRequested) {
+    statusBadge = `<span class="badge bg-warning">Delete Request Raised</span>`;
+}
+else if (emp.isApproved === true) {
+    statusBadge = `<span class="badge bg-success">Approved</span>`;
+}
+else if (emp.isApproved === false) {
+    statusBadge = `<span class="badge bg-danger">Rejected</span>`;
+}
+else {
+    statusBadge = `<span class="badge bg-secondary">Pending</span>`;
+}
+
 
                     const row = `
                         <tr>
                             <td>${emp.employeeName}</td>
                             <td>${emp.department}</td>
                             <td>${emp.designation}</td>
-                            <td>${emp.age}</td>
-                            <td>${emp.gender}</td>
+                            <td>${emp.subject}</td>
                             <td>${emp.address}</td>
+                            <td>${emp.ToYear}</td>
                             <td>${statusBadge}</td>
 
                             <td>${emp.remarks || ''}</td>

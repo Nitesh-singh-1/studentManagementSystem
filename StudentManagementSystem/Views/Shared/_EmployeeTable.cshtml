@@ -152,6 +152,7 @@
 @{
     var apiBaseUrl = Configuration["ApiSettings:BaseUrl"];
     var userRole = Context.Session.GetString("UserRole") ?? "";
+    var userId = Context.Session.GetInt32("UserId") ?? 0;
 }
 
 <div class="card shadow-sm border-0">
@@ -159,18 +160,20 @@
         <table id="employeeTable" class="table table-hover align-middle mb-0">
             <thead class="table-light text-uppercase">
                 <tr>
-                    <th>Name</th>
-                    <th>Department</th>
-                    <th>Designation</th>
-                    <th>Age</th>
-                    <th>Gender</th>
-                    <th>Address</th>
+                    <th>Col No</th>
+                    <th>File No</th>
+                    <th>Part No</th>
+                    @* <th>Age</th> *@
+                    @* <th>Gender</th> *@
+                    <th>Subject</th>
+                    <th>From Year</th>
+                    <th>To Year</th>
                     <th>Status</th>
                     <th>Remark</th>
-                    @if (userRole == "Admin")
+                    @* @if (userRole == "Admin")
                     {
                         <th class="text-center">Entry By</th>
-                    }
+                    } *@
                     <th class="text-center">Action</th>
                 </tr>
             </thead>
@@ -192,6 +195,7 @@
 <script>
     const apiBaseUrl = '@apiBaseUrl';
     const userRole = '@userRole';
+    const currentUserId = @userId;
     window.allEmployees = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model ?? new List<EmployeeResponse>()));
     window.currentPage = 1;
     window.recordsPerPage = 10;
@@ -219,11 +223,29 @@
         }
 
         paged.forEach(emp => {
-            const statusBadge = emp.isApproved === true
-                ? `<span class="badge bg-success">Approved</span>`
-                : emp.isApproved === false
-                    ? `<span class="badge bg-danger">Rejected</span>`
-                    : `<span class="badge bg-secondary">Pending</span>`;
+            // const statusBadge = emp.isApproved === true
+            //     ? `<span class="badge bg-success">Approved</span>`
+            //     : emp.isApproved === false
+            //         ? `<span class="badge bg-danger">Rejected</span>`
+            //         : `<span class="badge bg-secondary">Pending</span>`;
+            let statusBadge = '';
+
+if (emp.IsDeleted) {
+    statusBadge = `<span class="badge bg-danger">Delete Approved</span>`;
+}
+else if (emp.IsDeleteRequested) {
+    statusBadge = `<span class="badge bg-warning">Delete Request Raised</span>`;
+}
+else if (emp.isApproved === true) {
+    statusBadge = `<span class="badge bg-success">Approved</span>`;
+}
+else if (emp.isApproved === false) {
+    statusBadge = `<span class="badge bg-danger">Rejected</span>`;
+}
+else {
+    statusBadge = `<span class="badge bg-secondary">Pending</span>`;
+}
+
 
                 let actions = '';
 
@@ -252,12 +274,19 @@
                     <a href="/Employee/Edit/${emp.id || emp.Id}" class="btn btn-sm btn-edit me-1 ${disabled}">
                         <i class="bi bi-pencil"></i> Edit
                     </a>
-                    <form action="/Report/DelEmployee/${emp.id || emp.Id}" method="post" class="d-inline" onsubmit="return confirm('Delete this employee?');">
-                        <button type="submit" class="btn btn-sm btn-delete ${disabled}" ${disabled}>
-                            <i class="bi bi-trash"></i> Delete
-                        </button>
-                    </form>
+                   <button
+    class="btn btn-sm btn-delete"
+    onclick="raiseDeleteRequest(${emp.id || emp.Id})"
+    ${emp.isDeleteRequested || emp.isDeleted ? 'disabled' : ''}>
+    <i class="bi bi-trash"></i> Delete
+</button>
+
                 `;
+                 // <form action="/Report/DelEmployee/${emp.id || emp.Id}" method="post" class="d-inline" onsubmit="return confirm('Delete this employee?');">
+                 //        <button type="submit" class="btn btn-sm btn-delete ${disabled}" ${disabled}>
+                 //            <i class="bi bi-trash"></i> Delete
+                 //        </button>
+                 //    </form>
             }
 
             const row = `
@@ -265,15 +294,13 @@
                     <td class="remark-cell" title="${emp.employeeName || ''}">${emp.employeeName || ''}</td>
                     <td class="remark-cell" title="${emp.department || ''}">${emp.department || ''}</td>
                     <td class="remark-cell" title="${emp.designation || ''}">${emp.designation || ''}</td>
-                    <td>${emp.age ?? ''}</td>
-                    <td>${emp.gender || ''}</td>
+                    
+                    <td class="remark-cell" title="${emp.subject || ''}">${emp.subject || ''}</td>
                     <td class="remark-cell" title="${emp.address || ''}">${emp.address || ''}</td>
+                    <td class="remark-cell" title="${emp.ToYear || ''}">${emp.ToYear || ''}</td>
                     <td>${statusBadge}</td>
                     <td class="remark-cell" title="${emp.remarks || emp.Remarks || ''}">${emp.remarks || emp.Remarks || ''}</td>
-                     ${userRole === "Admin"
-        ? `<td class="text-center">${emp.enteryMadeBy || ''}</td>`
-        : ''
-    }
+                    
                     <td class="text-center">${actions}</td>
                 </tr>
             `;
@@ -288,4 +315,20 @@
     document.addEventListener('DOMContentLoaded', () => window.renderPage(1));
     document.getElementById("prevPageBtn").addEventListener("click", () => window.renderPage(window.currentPage - 1));
     document.getElementById("nextPageBtn").addEventListener("click", () => window.renderPage(window.currentPage + 1));
+
+
+    function raiseDeleteRequest(employeeId) {
+    if (!confirm("Raise delete request for this employee?")) return;
+
+    fetch(`${apiBaseUrl}/Employee/delete-requested/${employeeId}?userId=${currentUserId}`, {
+        method: 'POST'
+    })
+    .then(res => res.json())
+    .then(() => {
+        alert("Delete request raised");
+        location.reload();
+    })
+    .catch(() => alert("Error raising delete request"));
+}
+
 </script>

@@ -27,13 +27,13 @@
         <input type="hidden" value="@userId" asp-for="modifiedBy" />
         <div class="row mb-3">
             <div class="col-md-6">
-                <label asp-for="employeeName" class="form-label">Employee Name</label>
+                <label asp-for="employeeName" class="form-label">Col No.</label>
                 <input asp-for="employeeName" class="form-control" placeholder="Enter name" />
                 <span asp-validation-for="employeeName" class="text-danger"></span>
             </div>
 
             <div class="col-md-6">
-                <label asp-for="department" class="form-label">Department</label>
+                <label asp-for="department" class="form-label">File No</label>
                 <input asp-for="department" class="form-control" placeholder="Enter department" />
                 <span asp-validation-for="department" class="text-danger"></span>
             </div>
@@ -41,29 +41,39 @@
 
         <div class="row mb-3">
             <div class="col-md-6">
-                <label asp-for="designation" class="form-label">Designation</label>
+                <label asp-for="designation" class="form-label">Part No</label>
                 <input asp-for="designation" class="form-control" placeholder="Enter designation" />
                 <span asp-validation-for="designation" class="text-danger"></span>
             </div>
+             <div class="col-md-6">
+                <label asp-for="subject" class="form-label">Subject</label>
+                <input asp-for="subject" class="form-control" placeholder="Enter subject" />
+                <span asp-validation-for="subject" class="text-danger"></span>
+            </div>
 
-            <div class="col-md-6">
+            @* <div class="col-md-6">
                 <label asp-for="age" class="form-label">Age</label>
                 <input asp-for="age" class="form-control" type="number" placeholder="Enter age" />
                 <span asp-validation-for="age" class="text-danger"></span>
-            </div>
+            </div> *@
         </div>
 
         <div class="row mb-3">
-            <div class="col-md-6">
+          @*   <div class="col-md-6">
                 <label asp-for="gender" class="form-label">Gender</label>
                 <input asp-for="gender" class="form-control" placeholder="Enter gender" />
                 <span asp-validation-for="gender" class="text-danger"></span>
             </div>
-
+ *@
             <div class="col-md-6">
-                <label asp-for="address" class="form-label">Address</label>
-                <textarea asp-for="address" class="form-control" rows="2" placeholder="Enter address"></textarea>
+                <label asp-for="address" class="form-label">From Year</label>
+                <input asp-for="address" class="form-control" rows="2" placeholder="Enter From Year"></input>
                 <span asp-validation-for="address" class="text-danger"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="ToYear" class="form-label">To Year</label>
+                <input asp-for="ToYear" class="form-control" rows="2" placeholder="Enter To Year"></input>
+                <span asp-validation-for="ToYear" class="text-danger"></span>
             </div>
         </div>
 

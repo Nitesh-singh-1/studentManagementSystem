@@ -46,12 +46,12 @@ namespace EmployeeManagementSystem.Controllers
 
             if (result != null)
             {
-                ViewBag.Success = "Employee registered successfully!";
+                ViewBag.Success = "Registered successfully!";
                 ModelState.Clear();
                 return View(new EmployeeResponse());
             }
 
-            ViewBag.Error = "Failed to register employee.";
+            ViewBag.Error = "Failed to register.";
             return View(model);
         }
 
