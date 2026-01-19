@@ -1,4 +1,6 @@
-﻿namespace EmployeeManagementSystem.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace EmployeeManagementSystem.Models
 {
     public class LoginResponse
     {
@@ -9,26 +11,36 @@
     public class EmployeeResponse
     {
         public int Id { get; set; }
+        [Display(Name = "Col No")]
+        [Required(ErrorMessage = "Col No is required")]
         public string employeeName { get; set; }
+
+        [Display(Name = "File No")]
+        [Required(ErrorMessage = "File No is required")]
         public string department { get; set; }
-        public string designation { get; set; }
+        public string? designation { get; set; }
         public int age { get; set; }
         public string gender { get; set; }
-        public string address { get; set; }
+        public string? address { get; set; }
         public bool? isApproved { get; set; }
         public string? Remarks { get; set; }
         public int? createdBy { get; set; }
         public int? modifiedBy { get; set; }
+        public string? fileUniqueId { get; set; }
         public int documentId { get; set; }
         public string fileName { get; set; }
         public string filePath { get; set; }
         public string createdon { get; set; }
         public string enteryMadeBy { get; set; }
 
+        [Display(Name = "Subject")]
+        [Required(ErrorMessage = "Subject is required")]
         public string subject { get; set; }
-        public string ToYear { get; set; }
+        public string? ToYear { get; set; }
         public bool IsDeleteRequested { get; set; }
         public bool IsDeleted { get; set; }
+
+        public int? TotalpageCount { get; set; }
         public List<EmployeeDocument> employeeDocuments { get; set; } = new();
     }
 

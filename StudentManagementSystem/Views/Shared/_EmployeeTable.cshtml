@@ -9,6 +9,28 @@
         border-radius: 8px;
     }
 
+    #employeeTable td.action-col {
+        max-width: none;
+        overflow: visible;
+        white-space: nowrap;
+        text-overflow: unset;
+    }
+
+    /* === View Documents (Light Green) === */
+    .btn-view {
+        background-color: #e6f4ea; /* light green */
+        color: #1e7e34; /* dark green text */
+        border: 1px solid #b7dfc1; /* soft green border */
+        font-weight: 500;
+        transition: all 0.2s ease-in-out;
+    }
+
+        .btn-view:hover {
+            background-color: #d4edda; /* slightly darker on hover */
+            color: #155724;
+        }
+
+
     #employeeTable {
         border-radius: 8px;
         min-width: 900px; /* ensures table doesn't shrink too much */
@@ -29,12 +51,12 @@
             vertical-align: middle;
             max-width: 200px;
             white-space: nowrap;
-            /* overflow: hidden; */
+            overflow: hidden;
             text-overflow: ellipsis;
         }
 
     /* === Buttons === */
-    .btn-view {
+   /*  .btn-view {
         background-color: #fff3cd;
         color: #856404;
         border: 1px solid #ffeeba;
@@ -44,7 +66,7 @@
         .btn-view:hover {
             background-color: #ffe08a;
         }
-
+ */
     .btn-approve {
         background-color: #d4edda;
         color: #155724;
@@ -147,10 +169,31 @@
     }
 
     }
+
+    /* Ensure modal is above backdrop */
+    .modal {
+        z-index: 1055 !important;
+    }
+
+    .modal-backdrop {
+        background-color: transparent !important;
+        opacity: 0 !important;
+        z-index: 1050 !important;
+        pointer-events: none;
+    }
+
+    /* Allow clicks inside modal */
+    .modal-dialog,
+    .modal-content {
+        pointer-events: auto;
+    }
+
+
 </style>
 
 @{
     var apiBaseUrl = Configuration["ApiSettings:BaseUrl"];
+    var docbaseUrl = Configuration["ApiSettings:docUrl"];
     var userRole = Context.Session.GetString("UserRole") ?? "";
     var userId = Context.Session.GetInt32("UserId") ?? 0;
 }
@@ -160,6 +203,7 @@
         <table id="employeeTable" class="table table-hover align-middle mb-0">
             <thead class="table-light text-uppercase">
                 <tr>
+                    <th>Unique ID</th>
                     <th>Col No</th>
                     <th>File No</th>
                     <th>Part No</th>
@@ -168,13 +212,14 @@
                     <th>Subject</th>
                     <th>From Year</th>
                     <th>To Year</th>
+                    <th>Page Count</th>
                     <th>Status</th>
                     <th>Remark</th>
                     @* @if (userRole == "Admin")
                     {
                         <th class="text-center">Entry By</th>
                     } *@
-                    <th class="text-center">Action</th>
+                    <th class="text-center action-col">Action</th>
                 </tr>
             </thead>
             <tbody id="employeeTableBody"></tbody>
@@ -191,144 +236,317 @@
         </nav>
     </div>
 </div>
+<div class="modal fade" id="documentsModal" tabindex="-1" >
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Documents</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <ul id="documentsList" class="list-group"></ul>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Documents</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <input type="file"
+                       id="uploadFilesInput"
+                       class="form-control"
+                       multiple />
+
+                <input type="hidden" id="uploadEmployeeId" />
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                    Cancel
+                </button>
+
+                <button class="btn btn-primary"
+                        onclick="uploadDocuments()">
+                    Upload
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 <script>
     const apiBaseUrl = '@apiBaseUrl';
+    const docbaseurl = '@docbaseUrl';
     const userRole = '@userRole';
     const currentUserId = @userId;
-    window.allEmployees = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model ?? new List<EmployeeResponse>()));
+
+    window.allEmployees = @Html.Raw(
+        Newtonsoft.Json.JsonConvert.SerializeObject(Model ?? new List<EmployeeResponse>())
+        );
+
     window.currentPage = 1;
     window.recordsPerPage = 10;
+    window.currentPageEmployees = [];
 
     window.renderPage = function (page) {
+
         const tableBody = document.getElementById("employeeTableBody");
         const pageInfo = document.getElementById("pageInfo");
         const prevBtn = document.getElementById("prevPageBtn");
         const nextBtn = document.getElementById("nextPageBtn");
 
-        const total = (window.allEmployees || []).length;
+        const total = window.allEmployees.length;
         const maxPage = Math.max(1, Math.ceil(total / window.recordsPerPage));
+
         page = Math.min(Math.max(1, page), maxPage);
         window.currentPage = page;
 
         const start = (page - 1) * window.recordsPerPage;
         const end = start + window.recordsPerPage;
-        const paged = (window.allEmployees || []).slice(start, end);
+
+        const paged = window.allEmployees.slice(start, end);
+
+        // ✅ FIX: set AFTER paged is calculated
+        window.currentPageEmployees = paged;
 
         tableBody.innerHTML = "";
 
         if (paged.length === 0) {
-            tableBody.innerHTML = "<tr><td colspan='9' class='text-center text-muted py-4'>No employees found.</td></tr>";
+            tableBody.innerHTML =
+                "<tr><td colspan='9' class='text-center text-muted py-4'>No records found.</td></tr>";
             return;
         }
 
         paged.forEach(emp => {
-            // const statusBadge = emp.isApproved === true
-            //     ? `<span class="badge bg-success">Approved</span>`
-            //     : emp.isApproved === false
-            //         ? `<span class="badge bg-danger">Rejected</span>`
-            //         : `<span class="badge bg-secondary">Pending</span>`;
-            let statusBadge = '';
 
-if (emp.IsDeleted) {
-    statusBadge = `<span class="badge bg-danger">Delete Approved</span>`;
-}
-else if (emp.IsDeleteRequested) {
-    statusBadge = `<span class="badge bg-warning">Delete Request Raised</span>`;
-}
-else if (emp.isApproved === true) {
-    statusBadge = `<span class="badge bg-success">Approved</span>`;
-}
-else if (emp.isApproved === false) {
-    statusBadge = `<span class="badge bg-danger">Rejected</span>`;
-}
-else {
-    statusBadge = `<span class="badge bg-secondary">Pending</span>`;
-}
+            let statusBadge = "";
 
+            if (emp.IsDeleted) {
+                statusBadge = `<span class="badge bg-danger">Delete Approved</span>`;
+            } else if (emp.IsDeleteRequested) {
+                statusBadge = `<span class="badge bg-warning">Delete Request Raised</span>`;
+            } else if (emp.isApproved === true) {
+                statusBadge = `<span class="badge bg-success">Approved</span>`;
+            } else if (emp.isApproved === false) {
+                statusBadge = `<span class="badge bg-danger">Rejected</span>`;
+            } else {
+                statusBadge = `<span class="badge bg-secondary">Pending</span>`;
+            }
 
-                let actions = '';
+            let actions = "";
 
-    (emp.employeeDocuments || []).forEach(doc => {
-        actions += `
-            <a href="${apiBaseUrl}/Employee/ViewEmployeeDocument/${emp.Id}?docId=${doc.Id}"
-               target="_blank"
-               class="btn btn-sm btn-view me-1"
-               style="background-color:#9cdcbe;color:green;">
-               <i class="bi bi-eye"></i> View
-            </a>
-        `;
-    });
+            const docCount = (emp.employeeDocuments || []).length;
 
-            
-            if (userRole === "Supervisor" || userRole ==="Admin") {
-                actions += `
-                    <button class="btn btn-sm btn-approve me-1" onclick="openRemarkModal(${emp.id || emp.Id}, true)">Approve</button>
-                    <button class="btn btn-sm btn-reject" onclick="openRemarkModal(${emp.id || emp.Id}, false)">Reject</button>
+            actions += `
+                    <button class="btn btn-sm btn-view me-1"
+                            onclick="openDocumentsModal(${emp.Id})">
+                        📄 View Documents (${docCount})
+                    </button>
                 `;
+
+            if (userRole === "Supervisor" || userRole === "Admin") {
+                actions += `
+                        <button class="btn btn-sm btn-approve me-1"
+                                onclick="openRemarkModal(${emp.Id}, true)">
+                            Approve
+                        </button>
+                        <button class="btn btn-sm btn-reject"
+                                onclick="openRemarkModal(${emp.Id}, false)">
+                            Reject
+                        </button>
+                    `;
             }
 
             if (userRole === "Operator") {
-                const disabled = emp.isApproved === true ? "disabled" : "";
                 actions += `
-                    <a href="/Employee/Edit/${emp.id || emp.Id}" class="btn btn-sm btn-edit me-1 ${disabled}">
-                        <i class="bi bi-pencil"></i> Edit
-                    </a>
-                   <button
-    class="btn btn-sm btn-delete"
-    onclick="raiseDeleteRequest(${emp.id || emp.Id})"
-    ${emp.isDeleteRequested || emp.isDeleted ? 'disabled' : ''}>
-    <i class="bi bi-trash"></i> Delete
-</button>
-
-                `;
-                 // <form action="/Report/DelEmployee/${emp.id || emp.Id}" method="post" class="d-inline" onsubmit="return confirm('Delete this employee?');">
-                 //        <button type="submit" class="btn btn-sm btn-delete ${disabled}" ${disabled}>
-                 //            <i class="bi bi-trash"></i> Delete
-                 //        </button>
-                 //    </form>
+            <a href="/Employee/Edit/${emp.Id}"
+               class="btn btn-sm btn-edit me-1">
+                Edit
+            </a>
+        `;
             }
 
+            actions += `
+        <button class="btn btn-sm btn-secondary me-1"
+                onclick="openUploadModal(${emp.Id})">
+            ⬆ Upload
+        </button>
+    `;
+
             const row = `
-                <tr title="${emp.employeeName || ''}">
-                    <td class="remark-cell" title="${emp.employeeName || ''}">${emp.employeeName || ''}</td>
-                    <td class="remark-cell" title="${emp.department || ''}">${emp.department || ''}</td>
-                    <td class="remark-cell" title="${emp.designation || ''}">${emp.designation || ''}</td>
-                    
-                    <td class="remark-cell" title="${emp.subject || ''}">${emp.subject || ''}</td>
-                    <td class="remark-cell" title="${emp.address || ''}">${emp.address || ''}</td>
-                    <td class="remark-cell" title="${emp.ToYear || ''}">${emp.ToYear || ''}</td>
-                    <td>${statusBadge}</td>
-                    <td class="remark-cell" title="${emp.remarks || emp.Remarks || ''}">${emp.remarks || emp.Remarks || ''}</td>
-                    
-                    <td class="text-center">${actions}</td>
-                </tr>
-            `;
-            tableBody.insertAdjacentHTML('beforeend', row);
+                    <tr>
+                            <td>${emp.fileUniqueId || ""}</td>
+                        <td>${emp.employeeName || ""}</td>
+                        <td>${emp.department || ""}</td>
+                        <td>${emp.designation || ""}</td>
+                        <td>${emp.subject || ""}</td>
+                        <td>${emp.address || ""}</td>
+                        <td>${emp.ToYear || ""}</td>
+                        <td>${emp.TotalpageCount || ""}</td>
+                        <td>${statusBadge}</td>
+                        <td>${emp.remarks || emp.Remarks || ""}</td>
+                            <td class="text-center action-col">${actions}</td>
+                    </tr>
+                `;
+
+            tableBody.insertAdjacentHTML("beforeend", row);
         });
 
         pageInfo.innerText = `Page ${page} / ${maxPage}`;
         prevBtn.disabled = page === 1;
-        nextBtn.disabled = page === maxPage || total === 0;
+        nextBtn.disabled = page === maxPage;
     };
 
-    document.addEventListener('DOMContentLoaded', () => window.renderPage(1));
-    document.getElementById("prevPageBtn").addEventListener("click", () => window.renderPage(window.currentPage - 1));
-    document.getElementById("nextPageBtn").addEventListener("click", () => window.renderPage(window.currentPage + 1));
+    document.addEventListener("DOMContentLoaded", () => {
+        window.renderPage(1);
+    });
+
+    document.getElementById("prevPageBtn")
+        .addEventListener("click", () => window.renderPage(window.currentPage - 1));
+
+    document.getElementById("nextPageBtn")
+        .addEventListener("click", () => window.renderPage(window.currentPage + 1));
 
 
     function raiseDeleteRequest(employeeId) {
-    if (!confirm("Raise delete request for this employee?")) return;
+        if (!confirm("Raise delete request for this employee?")) return;
 
-    fetch(`${apiBaseUrl}/Employee/delete-requested/${employeeId}?userId=${currentUserId}`, {
-        method: 'POST'
-    })
-    .then(res => res.json())
-    .then(() => {
-        alert("Delete request raised");
-        location.reload();
-    })
-    .catch(() => alert("Error raising delete request"));
-}
+        fetch(`${apiBaseUrl}/Employee/delete-requested/${employeeId}?userId=${currentUserId}`, {
+            method: "POST"
+        })
+            .then(() => {
+                alert("Delete request raised");
+                location.reload();
+            })
+            .catch(() => alert("Error raising delete request"));
+    }
+
+    function openDocumentsModal(employeeId) {
+
+        const emp = window.currentPageEmployees
+            .find(e => e.Id === employeeId);
+
+        const list = document.getElementById("documentsList");
+        list.innerHTML = "";
+
+        if (!emp || !emp.employeeDocuments || emp.employeeDocuments.length === 0) {
+            list.innerHTML = `
+                <li class="list-group-item text-muted text-center">
+                    No documents found
+                </li>`;
+        } else {
+
+            emp.employeeDocuments.forEach((doc, index) => {
+
+                list.innerHTML += `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${doc.FileName ?? "Document " + (index + 1)}</strong>
+                            <br />
+                            <small class="text-muted">
+                                Uploaded on: ${new Date(doc.UploadedOn).toLocaleDateString()}
+                            </small>
+                        </div>
+
+                                    <a href="${docbaseurl}${doc.FilePath}"
+                           target="_blank"
+                           class="btn btn-sm btn-primary">
+                            View
+                        </a>
+                    </li>
+                `;
+            });
+        }
+
+        new bootstrap.Modal(
+            document.getElementById("documentsModal")
+        ).show();
+    }
+
+    function openUploadModal(employeeId) {
+        document.getElementById("uploadEmployeeId").value = employeeId;
+        document.getElementById("uploadFilesInput").value = "";
+
+        new bootstrap.Modal(
+            document.getElementById("uploadModal")
+        ).show();
+    }
+
+    function uploadDocuments() {
+
+        const employeeId = document.getElementById("uploadEmployeeId").value;
+        const files = document.getElementById("uploadFilesInput").files;
+
+        if (!files || files.length === 0) {
+            alert("Please select at least one file.");
+            return;
+        }
+        const employee = window.allEmployees.find(e => e.Id == employeeId);
+
+        if (!employee || !employee.fileUniqueId) {
+            alert("Unable to determine File Unique ID.");
+            return;
+        }
+
+        const MAX_SIZE = 20 * 1024 * 1024; // 20 MB
+
+        for (let file of files) {
+            if (file.size > MAX_SIZE) {
+                alert(`File "${file.name}" exceeds 20 MB limit.`);
+                return;
+            }
+            const fileName = file.name;
+
+            if (fileName.length < 7) {
+                alert(`Invalid file name: ${fileName}`);
+                return;
+            }
+
+            const filePrefix = fileName.substring(0, 7);
+
+            if (filePrefix !== employee.fileUniqueId) {
+                alert(
+                    `File name "${fileName}" is invalid.\n\n` +
+                    `Expected file name to start with "${employee.fileUniqueId}".`
+                );
+                return;
+            }
+        }
+        const formData = new FormData();
+        for (let file of files) {
+            formData.append("documents", file);
+        }
+
+        fetch(`${apiBaseUrl}/Employee/upload-documents/${employeeId}`, {
+            method: "POST",
+            body: formData
+        })
+            .then(res => {
+                if (!res.ok) throw new Error("Upload failed");
+                return res.json();
+            })
+            .then(() => {
+                alert("Documents uploaded successfully");
+                location.reload();
+            })
+            .catch(err => {
+                alert(err.message);
+            });
+    }
+
 
 </script>
+

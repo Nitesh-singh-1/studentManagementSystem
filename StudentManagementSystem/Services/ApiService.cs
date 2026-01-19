@@ -176,23 +176,39 @@ namespace EmployeeManagementSystem.Services
         {
             using var formData = new MultipartFormDataContent();
 
-            //formData.Add(new StringContent(employee.employeeName ?? ""), "EmployeeName");
-            //formData.Add(new StringContent(employee.department ?? ""), "Department");
+
+            //formData.Add(new StringContent(employee.modifiedBy.ToString()), "ModifiedBy");
+            //formData.Add(new StringContent(employee.employeeName ?? ""), "EmployeeName");//colNo
+            //formData.Add(new StringContent(employee.department ?? ""), "Department");//File No
+            //formData.Add(new StringContent(employee.designation ?? ""), "Designation");//Part No
+            //                                                                           // formData.Add(new StringContent(employee.age.ToString()), "Age");
+            //formData.Add(new StringContent(employee.subject ?? ""), "subject");//Subject
+            //                                                                   //formData.Add(new StringContent(employee.gender ?? ""), "Gender");
+            //formData.Add(new StringContent(employee.address ?? ""), "Address");//from year
+            //formData.Add(new StringContent(employee.ToYear ?? ""), "ToYear");// to Year
+            //formData.Add(new StringContent(employee.Remarks ?? ""), "Remarks");
+            formData.Add(new StringContent(employee.employeeName ?? ""), "EmployeeName");
+            formData.Add(new StringContent(employee.department ?? ""), "Department");
             //formData.Add(new StringContent(employee.designation ?? ""), "Designation");
-            //formData.Add(new StringContent(employee.age.ToString()), "Age");
-            //formData.Add(new StringContent(employee.gender ?? ""), "Gender");
-            //formData.Add(new StringContent(employee.address ?? ""), "Address");
-            formData.Add(new StringContent(employee.modifiedBy.ToString()), "ModifiedBy");
-            formData.Add(new StringContent(employee.employeeName ?? ""), "EmployeeName");//colNo
-            formData.Add(new StringContent(employee.department ?? ""), "Department");//File No
-            formData.Add(new StringContent(employee.designation ?? ""), "Designation");//Part No
-                                                                                       // formData.Add(new StringContent(employee.age.ToString()), "Age");
-            formData.Add(new StringContent(employee.subject ?? ""), "subject");//Subject
-                                                                               //formData.Add(new StringContent(employee.gender ?? ""), "Gender");
-            formData.Add(new StringContent(employee.address ?? ""), "Address");//from year
-            formData.Add(new StringContent(employee.ToYear ?? ""), "ToYear");// to Year
-            formData.Add(new StringContent(employee.Remarks ?? ""), "Remarks");
-           // formData.Add(new StringContent(createdBy.ToString() ?? ""), "createdBy");
+            if (!string.IsNullOrWhiteSpace(employee.designation))
+            {
+                formData.Add(new StringContent(employee.designation), "Designation");
+            }
+
+            formData.Add(new StringContent(employee.subject ?? ""), "Subject");
+            //formData.Add(new StringContent(createdBy.ToString()), "createdBy");
+
+            // OPTIONAL fields (only when provided)
+            if (!string.IsNullOrWhiteSpace(employee.address))
+            {
+                formData.Add(new StringContent(employee.address), "Address");
+            }
+
+            if (!string.IsNullOrWhiteSpace(employee.ToYear))
+            {
+                formData.Add(new StringContent(employee.ToYear), "ToYear");
+            }
+            // formData.Add(new StringContent(createdBy.ToString() ?? ""), "createdBy");
             // 🧩 Add file(s)
             if (documents != null && documents.Count > 0)
             {
@@ -212,7 +228,7 @@ namespace EmployeeManagementSystem.Services
         {
             try
             {
-                var response = await _httpClient.DeleteAsync($"{_baseUrl}/Employee/deleteImg/{id}");
+                var response = await _httpClient.DeleteAsync($"{_baseUrl}/Employee/deleteDoc/{id}");
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -238,37 +254,51 @@ namespace EmployeeManagementSystem.Services
             }
         }
 
-        public async Task<EmployeeResponse?> AddEmployee(int createdBy,EmployeeResponse employee, List<IFormFile>? documents = null)
+        public async Task<EmployeeResponse?> AddEmployee(
+    int createdBy,
+    EmployeeResponse employee,
+    List<IFormFile>? documents = null)
         {
             using var formData = new MultipartFormDataContent();
 
-            // 🧩 Add normal fields (match API property names)
-            formData.Add(new StringContent(employee.employeeName ?? ""), "EmployeeName");//colNo
-            formData.Add(new StringContent(employee.department ?? ""), "Department");//File No
-            formData.Add(new StringContent(employee.designation ?? ""), "Designation");//Part No
-            // formData.Add(new StringContent(employee.age.ToString()), "Age");
-            formData.Add(new StringContent(employee.subject ?? ""), "subject");//Subject
-            //formData.Add(new StringContent(employee.gender ?? ""), "Gender");
-            formData.Add(new StringContent(employee.address ?? ""), "Address");//from year
-            formData.Add(new StringContent(employee.ToYear ?? ""), "ToYear");// to Year
-            formData.Add(new StringContent(employee.Remarks ?? ""), "Remarks");
-            formData.Add(new StringContent(createdBy.ToString() ?? ""), "createdBy");
+            // REQUIRED fields
+            formData.Add(new StringContent(employee.employeeName ?? ""), "EmployeeName");
+            formData.Add(new StringContent(employee.department ?? ""), "Department");
+            //formData.Add(new StringContent(employee.designation ?? ""), "Designation");
+            if (!string.IsNullOrWhiteSpace(employee.designation))
+            {
+                formData.Add(new StringContent(employee.designation), "Designation");
+            }
 
-            // 🧩 Add file(s)
+            formData.Add(new StringContent(employee.subject ?? ""), "Subject");
+            formData.Add(new StringContent(createdBy.ToString()), "createdBy");
+
+            // OPTIONAL fields (only when provided)
+            if (!string.IsNullOrWhiteSpace(employee.address))
+            {
+                formData.Add(new StringContent(employee.address), "Address");
+            }
+
+            if (!string.IsNullOrWhiteSpace(employee.ToYear))
+            {
+                formData.Add(new StringContent(employee.ToYear), "ToYear");
+            }
+
+            // Files
             if (documents != null && documents.Count > 0)
             {
                 foreach (var file in documents)
                 {
                     var fileStream = new StreamContent(file.OpenReadStream());
-                    fileStream.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+                    fileStream.Headers.ContentType =
+                        new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
                     formData.Add(fileStream, "Documents", file.FileName);
                 }
             }
 
-            // 🧩 Send POST request to API
             var response = await _httpClient.PostAsync($"{_baseUrl}/Employee/add", formData);
 
-            // 🧩 Check success
             if (!response.IsSuccessStatusCode)
             {
                 var error = await response.Content.ReadAsStringAsync();
@@ -276,23 +306,22 @@ namespace EmployeeManagementSystem.Services
                 return null;
             }
 
-            // 🧩 Parse response (e.g., {"message": "...", "employeeId": 8})
             var content = await response.Content.ReadAsStringAsync();
             var json = JObject.Parse(content);
-           
+
             return new EmployeeResponse
             {
                 Id = json.Value<int>("employeeId"),
+                fileUniqueId = json.Value<string>("fileUniqueId"),
                 employeeName = employee.employeeName,
                 department = employee.department,
                 designation = employee.designation,
-                age = employee.age,
-                gender = employee.gender,
                 address = employee.address,
-                createdBy = createdBy,
-
+                ToYear = employee.ToYear,
+                createdBy = createdBy
             };
         }
+
 
         public async Task<delResponse> DeleteEmp(int id)
         {

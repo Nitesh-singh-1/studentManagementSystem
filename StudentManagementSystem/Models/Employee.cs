@@ -13,16 +13,16 @@ namespace EmployeeManagementSystem.Models
         [Required]
         public string Department { get; set; }
 
-        [Required]
+        
         public string Designation { get; set; }
 
-        [Range(18, 65)]
+        
         public int Age { get; set; }
 
-        [Required]
+        
         public string Gender { get; set; }
 
-        [Required]
+       
         public string Address { get; set; }
 
         // Navigation property
